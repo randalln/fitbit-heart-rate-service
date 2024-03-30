@@ -13,17 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
+plugins {
+    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.jetbrainsKotlinAndroid)
+}
 
 android {
-    compileSdkVersion 27
+    namespace "com.example.hrservice"
+    compileSdk 34
+    
     defaultConfig {
         applicationId "com.example.hrservice"
         minSdkVersion 27
-        targetSdkVersion 27
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
+    }
+    buildFeatures {
+        viewBinding true
     }
     buildTypes {
         release {
@@ -35,14 +42,28 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
     packagingOptions {
-        exclude 'META-INF/*'
+        jniLibs {
+            excludes += ['META-INF/*']
+        }
+        resources {
+            excludes += ['META-INF/*']
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
     }
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation libs.activity
+    implementation libs.activity.ktx
+    implementation libs.fragment
 
-    implementation "io.ktor:ktor:1.4.0"
-    implementation "io.ktor:ktor-server-netty:1.4.0"
-    implementation "io.ktor:ktor-gson:1.4.0"
+    implementation libs.ktor
+    implementation libs.ktor.server.netty
+    implementation libs.ktor.gson
 }

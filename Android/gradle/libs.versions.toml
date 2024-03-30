@@ -1,0 +1,19 @@
+[versions]
+activity = "1.8.2"
+agp = "8.3.1"
+fragment = "1.6.2"
+kotlin = "1.9.22"
+ktor = "1.4.0"
+
+[libraries]
+activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activity" }
+fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
+ktor = { module = "io.ktor:ktor", version.ref = "ktor" }
+ktor-gson = { module = "io.ktor:ktor-gson", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+
+[plugins]
+androidApplication = { id = "com.android.application", version.ref = "agp" }
+jetbrainsKotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+
