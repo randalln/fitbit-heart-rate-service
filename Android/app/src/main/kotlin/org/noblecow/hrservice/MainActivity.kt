@@ -31,25 +31,24 @@ import androidx.activity.result.contract.ActivityResultContracts.RequestMultiple
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import org.noblecow.hrservice.R
-import org.noblecow.hrservice.databinding.ActivityServerBinding
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.features.ContentNegotiation
-import io.ktor.features.StatusPages
-import io.ktor.gson.gson
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.request.receive
-import io.ktor.response.respond
-import io.ktor.response.respondText
-import io.ktor.routing.get
-import io.ktor.routing.post
-import io.ktor.routing.routing
+import io.ktor.serialization.gson.gson
+import io.ktor.server.application.call
+import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.routing
 import java.util.Arrays
 import java.util.UUID
+import org.noblecow.hrservice.databinding.ActivityServerBinding
 
 private const val TAG = "HRService"
 private const val PORT_LISTEN = 12345
@@ -352,9 +351,9 @@ class MainActivity : FragmentActivity() {
 
             embeddedServer(Netty, PORT_LISTEN) {
                 install(StatusPages) {
-                    exception<Throwable> { e ->
+                    exception<Throwable> { call, e ->
                         call.respondText(
-                            e.localizedMessage,
+                            e.localizedMessage ?: e::javaClass.name,
                             ContentType.Text.Plain,
                             HttpStatusCode.InternalServerError
                         )
@@ -370,7 +369,7 @@ class MainActivity : FragmentActivity() {
 
                     post("/") {
                         val request = call.receive<Request>()
-                        Log.i(TAG, "Received POST request: $request")
+                        Log.d(TAG, "Received POST request: $request")
                         heartRateData[1] = request.bpm.toByte()
                         updateLocalUi(request.bpm)
                         notifyRegisteredDevices()
@@ -482,11 +481,11 @@ class MainActivity : FragmentActivity() {
      */
     private fun notifyRegisteredDevices() {
         if (registeredDevices.isEmpty()) {
-            Log.i(TAG, "No subscribers registered")
+            Log.d(TAG, "No subscribers registered")
             return
         }
 
-        Log.i(TAG, "Sending update to ${registeredDevices.size} subscribers")
+        Log.d(TAG, "Sending update to ${registeredDevices.size} subscribers")
         for (device in registeredDevices) {
             val characteristic = bluetoothGattServer
                 ?.getService(HR_SERVICE)

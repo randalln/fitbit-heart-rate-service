@@ -18,6 +18,10 @@ plugins {
     alias(libs.plugins.jetbrainsKotlinAndroid)
 }
 
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
 android {
     namespace "org.noblecow.hrservice"
     compileSdk 34
@@ -26,20 +30,26 @@ android {
         applicationId "org.noblecow.hrservice"
         minSdkVersion 27
         targetSdkVersion 34
-        versionCode 1
+        versionCode 2
         versionName "1.0"
     }
     buildFeatures {
         viewBinding true
     }
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
-    }
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
     }
     packagingOptions {
         jniLibs {
@@ -63,7 +73,9 @@ dependencies {
     implementation libs.activity.ktx
     implementation libs.fragment
 
-    implementation libs.ktor
+    implementation libs.ktor.serialization.gson
+    implementation libs.ktor.server.content.negotiation
+    implementation libs.ktor.server.core
     implementation libs.ktor.server.netty
-    implementation libs.ktor.gson
+    implementation libs.ktor.server.status.pages
 }
