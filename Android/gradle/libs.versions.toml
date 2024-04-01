@@ -3,15 +3,17 @@ activity = "1.8.2"
 agp = "8.3.1"
 fragment = "1.6.2"
 kotlin = "1.9.22"
-ktor = "1.4.0"
+ktor = "2.3.9"
 
 [libraries]
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activity" }
 fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
-ktor = { module = "io.ktor:ktor", version.ref = "ktor" }
-ktor-gson = { module = "io.ktor:ktor-gson", version.ref = "ktor" }
+ktor-serialization-gson = { module = "io.ktor:ktor-serialization-gson", version.ref = "ktor" }
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
