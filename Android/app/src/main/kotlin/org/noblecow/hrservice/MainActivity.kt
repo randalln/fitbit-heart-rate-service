@@ -1,4 +1,4 @@
-package com.example.hrservice
+package org.noblecow.hrservice
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
@@ -31,7 +31,8 @@ import androidx.activity.result.contract.ActivityResultContracts.RequestMultiple
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import com.example.hrservice.databinding.ActivityServerBinding
+import org.noblecow.hrservice.R
+import org.noblecow.hrservice.databinding.ActivityServerBinding
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.ContentNegotiation
