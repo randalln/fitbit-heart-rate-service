@@ -1,9 +1,10 @@
-package com.example.hrservice
+package org.noblecow.hrservice
 
 import android.app.AlertDialog
 import android.app.Dialog
 import android.os.Bundle
 import androidx.fragment.app.DialogFragment
+import org.noblecow.hrservice.R
 
 class FatalErrorDialogFragment(
     private val errorMessage: String
