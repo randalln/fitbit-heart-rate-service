@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
 }
 
-def keystorePropertiesFile = rootProject.file("keystore.properties")
-def keystoreProperties = new Properties()
-keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 
 android {
     namespace = "org.noblecow.hrservice"
     compileSdk = 34
-    
+
     defaultConfig {
         applicationId = "org.noblecow.hrservice"
         minSdk = 27
@@ -37,26 +40,30 @@ android {
         viewBinding = true
     }
     signingConfigs {
-        release {
-            keyAlias = keystoreProperties["keyAlias"]
-            keyPassword = keystoreProperties["keyPassword"]
-            storeFile = file(keystoreProperties["storeFile"])
-            storePassword = keystoreProperties["storePassword"]
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+            storeFile = file(keystoreProperties["storeFile"] as String)
+            storePassword = keystoreProperties["storePassword"] as String
         }
     }
     buildTypes {
         release {
-            minifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.release
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs["release"]
         }
     }
-    packagingOptions {
-        jniLibs {
-            excludes += ["META-INF/*"]
-        }
+    packaging {
         resources {
-            excludes += ["META-INF/*"]
+            excludes += arrayOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "META-INF/INDEX.LIST",
+                "META-INF/io.netty.versions.properties"
+            )
         }
     }
     compileOptions {
