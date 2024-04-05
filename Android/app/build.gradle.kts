@@ -13,12 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("UnstableApiUsage")
+
 import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.ktlint)
+    kotlin("plugin.serialization") version(libs.versions.kotlin)
+}
+
+detekt {
+    buildUponDefaultConfig = true
 }
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -33,11 +44,12 @@ android {
         applicationId = "org.noblecow.hrservice"
         minSdk = 27
         targetSdk = 34
-        versionCode = 2
+        versionCode = 3
         versionName = "1.0"
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
     signingConfigs {
         create("release") {
@@ -49,12 +61,15 @@ android {
     }
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs["release"]
+            kotlinOptions {
+                allWarningsAsErrors = true
+            }
         }
     }
     packaging {
@@ -78,9 +93,14 @@ android {
 dependencies {
     implementation(libs.activity)
     implementation(libs.activity.ktx)
+    implementation(libs.constraintlayout)
     implementation(libs.fragment)
-
-    implementation(libs.ktor.serialization.gson)
+    implementation(libs.hilt)
+    ksp(libs.hilt.compiler)
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.serialization.kotlinx)
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)

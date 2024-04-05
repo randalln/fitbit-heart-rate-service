@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HR Service</string>
+    <string name="awaiting_client">Awaiting client …</string>
     <string name="error_advertise">Error starting BLE advertising</string>
+    <string name="error_gatt">Unable to create GATT server</string>
     <string name="error_hardware">Required bluetooth hardware not present</string>
-    <string name="permissions_denied">Required permissions denied</string>
+    <string name="error_unknown">Unknown error encountered</string>
     <string name="exit">Exit</string>
+    <string name="fake_bpm">FakeBPM</string>
+    <string name="permissions_denied">Required permissions denied</string>
+    <string name="start">Start</string>
 </resources>
