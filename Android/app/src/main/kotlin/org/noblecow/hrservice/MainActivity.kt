@@ -83,7 +83,6 @@ class MainActivity : FragmentActivity() {
             is UiState.Idle -> {
             }
             is UiState.RequestPermissions -> {
-                Log.d(TAG, "permissionsNeeded: ${uiState.permissions.size}")
                 requestMultiplePermissions.launch(uiState.permissions.toTypedArray())
             }
             UiState.RequestEnableBluetooth -> {
