@@ -45,7 +45,7 @@ android {
         minSdk = 27
         targetSdk = 34
         versionCode = 3
-        versionName = "1.0"
+        versionName = "0.1"
     }
     buildFeatures {
         viewBinding = true
@@ -62,6 +62,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
