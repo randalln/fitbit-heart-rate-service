@@ -39,3 +39,5 @@ playing the role of the heart rate monitor)
 ### Disclaimer
 
 No implied warranty or guarantee of functionality. The names Fitbit, Android, and Bluetooth are trademarks of their respective owners.
+
+[Privacy Policy](privacy-android.md)
