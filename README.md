@@ -26,6 +26,8 @@ I still don't know much about Fitbit app development, so hopefully I'll get arou
 on which to run it (since the device with the Fitbit app on it will be running the HR Service app and 
 playing the role of the heart rate monitor)
 
+**Note**: Work is under way to publish the Android app on Google Play
+
 ## To Use
 
 1. Start the HR Service app on the Fitbit watch.
