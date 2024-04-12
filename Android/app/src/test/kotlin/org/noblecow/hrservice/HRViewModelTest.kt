@@ -141,7 +141,7 @@ class HRViewModelTest {
         )
 
         viewModel.uiState.test {
-            assertEquals(UiState.AwaitingClient(0, true), awaitItem())
+            assertEquals(UiState.AwaitingClient(0, showClientStatus = true), awaitItem())
         }
     }
 
@@ -232,7 +232,7 @@ class HRViewModelTest {
         bluetoothState.emit(BluetoothAdapter.STATE_ON)
 
         viewModel.uiState.test {
-            assertEquals(UiState.AwaitingClient(0, true), awaitItem())
+            assertEquals(UiState.AwaitingClient(0, showClientStatus = true), awaitItem())
         }
     }
 
@@ -251,11 +251,17 @@ class HRViewModelTest {
         )
         advanceUntilIdle()
 
-        viewModel.sendFakeBPM(FAKE_BPM)
+        viewModel.toggleFakeBPM()
 
         viewModel.uiState.test {
-            assertEquals(UiState.AwaitingClient(0, true), awaitItem())
-            assertEquals(UiState.AwaitingClient(FAKE_BPM, true), awaitItem())
+            assertEquals(
+                UiState.AwaitingClient(0, sendingFakeBPM = false, showClientStatus = true),
+                awaitItem()
+            )
+            assertEquals(
+                UiState.AwaitingClient(FAKE_BPM, sendingFakeBPM = true, showClientStatus = true),
+                awaitItem()
+            )
         }
     }
 
@@ -275,11 +281,35 @@ class HRViewModelTest {
         )
         advanceUntilIdle()
 
-        viewModel.sendFakeBPM(FAKE_BPM)
+        viewModel.toggleFakeBPM()
 
         viewModel.uiState.test {
             assertEquals(UiState.ClientConnected(0), awaitItem())
-            assertEquals(UiState.ClientConnected(FAKE_BPM), awaitItem())
+            assertEquals(UiState.ClientConnected(FAKE_BPM, sendingFakeBPM = true), awaitItem())
+        }
+    }
+
+    @Test
+    fun `turn off fake BPM`() = runTest {
+        viewModel = HRViewModel(bluetoothHelper, permissionsHelper)
+        every { bluetoothHelper.getBLEState() } returns BluetoothHelper.BLEState.READY
+        every { bluetoothHelper.registeredDevices } returns setOf(
+            mockk<BluetoothDevice>()
+        ).toMutableSet()
+        viewModel = HRViewModel(bluetoothHelper, permissionsHelper)
+        viewModel.receivePermissions(
+            mapOf(
+                permissions[0] to true,
+                permissions[1] to true
+            )
+        )
+
+        viewModel.toggleFakeBPM()
+        advanceUntilIdle()
+        viewModel.toggleFakeBPM()
+
+        viewModel.uiState.test {
+            assertEquals(UiState.ClientConnected(0, sendingFakeBPM = false), awaitItem())
         }
     }
 }

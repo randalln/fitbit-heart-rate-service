@@ -21,7 +21,6 @@ import kotlinx.coroutines.launch
 import org.noblecow.hrservice.databinding.ActivityServerBinding
 
 private const val TAG = "MainActivity"
-internal const val FAKE_BPM = 42
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
@@ -31,6 +30,7 @@ class MainActivity : FragmentActivity() {
     private lateinit var bpmText: TextView
     private lateinit var startButton: Button
     private lateinit var status: TextView
+    private lateinit var fakeBPM: Button
 
     private val requestMultiplePermissions = registerForActivityResult(
         RequestMultiplePermissions()
@@ -57,11 +57,12 @@ class MainActivity : FragmentActivity() {
             }
         }
         status = binding.status
-        if (BuildConfig.DEBUG) {
-            var fakeBpm = FAKE_BPM
-            binding.heartbeat.visibility = View.VISIBLE
-            binding.heartbeat.setOnClickListener {
-                viewModel.sendFakeBPM(fakeBpm++)
+        fakeBPM = binding.fakeBpm.apply {
+            if (BuildConfig.DEBUG) {
+                visibility = View.VISIBLE
+                setOnClickListener {
+                    viewModel.toggleFakeBPM()
+                }
             }
         }
         setContentView(binding.root)

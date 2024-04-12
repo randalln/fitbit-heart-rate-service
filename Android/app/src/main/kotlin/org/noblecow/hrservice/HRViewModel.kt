@@ -27,20 +27,26 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import java.time.Duration
 import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.time.delay
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import org.noblecow.hrservice.utils.BluetoothHelper
 import org.noblecow.hrservice.utils.PermissionsHelper
 
 private const val PORT_LISTEN = 12345
 private const val TAG = "HRViewModel"
+internal const val FAKE_BPM = 60
+private const val FAKE_BPM_MAX = 10
 
 @HiltViewModel
 class HRViewModel @Inject constructor(
@@ -53,6 +59,7 @@ class HRViewModel @Inject constructor(
 
     private var advertisingJob: Job? = null
     private var bluetoothReceiverJob: Job? = null
+    private var fakeBPMJob: Job? = null
     private var gattServerJob: Job? = null
     private var ktorServer: BaseApplicationEngine? = null
 
@@ -118,12 +125,13 @@ class HRViewModel @Inject constructor(
                 _uiState.update {
                     UiState.Error(HeartRateError.BtAdvertise)
                 }
+                stopServices()
             }
         }
         gattServerJob = viewModelScope.launch {
             bluetoothHelper.getGattServerFlow().collect { device ->
                 device?.let {
-                    Log.d(TAG, "serverFlow: ${device.name} ${device.address} ${device.type}")
+                    Log.d(TAG, "gattServerFlow: ${device.address} ${device.type}")
                 }
             }
         }
@@ -147,7 +155,7 @@ class HRViewModel @Inject constructor(
                     _uiState.update {
                         UiState.Error(HeartRateError.Ktor(message))
                     }
-                    stopServices(HeartRateError.Ktor(message))
+                    stopServices(updateUI = false)
                 }
             }
             install(ContentNegotiation) {
@@ -160,14 +168,10 @@ class HRViewModel @Inject constructor(
 
                 post("/") {
                     val request = call.receive<Request>()
-                    Log.d(TAG, "Received POST request: $request")
-                    _uiState.update {
-                        if (bluetoothHelper.registeredDevices.size > 0) {
-                            UiState.ClientConnected(request.bpm)
-                        } else {
-                            UiState.AwaitingClient(request.bpm)
-                        }
+                    if (fakeBPMJob == null) {
+                        Log.d(TAG, "Received POST request: $request")
                     }
+                    updateBPMUi(request.bpm)
                     bluetoothHelper.notifyRegisteredDevices(request.bpm)
                     call.respond(request)
                 }
@@ -175,17 +179,46 @@ class HRViewModel @Inject constructor(
         }.start(wait = false)
     }
 
-    internal fun stopServices(error: HeartRateError? = null) {
-        advertisingJob?.cancel()
-        advertisingJob = null
-        bluetoothReceiverJob?.cancel()
-        bluetoothReceiverJob = null
-        gattServerJob?.cancel()
-        gattServerJob = null
-        ktorServer?.stop()
-        ktorServer = null
+    private fun updateBPMUi(bpm: Int) {
+        _uiState.update {
+            val state = if (bluetoothHelper.registeredDevices.size > 0) {
+                UiState.ClientConnected(
+                    bpm = bpm,
+                    sendingFakeBPM = fakeBPMJob != null
+                )
+            } else {
+                UiState.AwaitingClient(
+                    bpm,
+                    sendingFakeBPM = fakeBPMJob != null
+                )
+            }
+            state
+        }
+    }
 
-        if (error == null) {
+    internal fun stopServices(updateUI: Boolean = true) {
+        fakeBPMJob?.let {
+            it.cancel()
+            fakeBPMJob = null
+        }
+        advertisingJob?.let {
+            it.cancel()
+            advertisingJob = null
+        }
+        bluetoothReceiverJob?.let {
+            it.cancel()
+            bluetoothReceiverJob = null
+        }
+        gattServerJob?.let {
+            it.cancel()
+            gattServerJob = null
+        }
+        ktorServer?.let {
+            it.stop()
+            ktorServer = null
+        }
+
+        if (updateUI) {
             _uiState.update {
                 UiState.Idle()
             }
@@ -198,25 +231,42 @@ class HRViewModel @Inject constructor(
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
-    internal fun sendFakeBPM(bpm: Int) {
-        viewModelScope.launch {
-            val client = HttpClient(Android) {
-                install(ClientContentNegotiation) {
-                    json(
-                        Json {
-                            prettyPrint = true
-                        }
-                    )
-                }
+    internal fun toggleFakeBPM() {
+        fakeBPMJob?.let {
+            it.cancel()
+            fakeBPMJob = null
+            updateBPMUi(0)
+        } ?: run {
+            fakeBPMJob = viewModelScope.launch {
+                getFakeBPMFlow()
+                    .catch {
+                        Log.d(TAG, it.localizedMessage, it)
+                    }
+                    .collect {
+                        updateBPMUi(it)
+                    }
             }
-            try {
+        }
+    }
+
+    private suspend fun getFakeBPMFlow(): Flow<Int> {
+        return flow {
+            var bpm = FAKE_BPM
+            while (true) {
+                if (bpm > FAKE_BPM + FAKE_BPM_MAX) {
+                    bpm = FAKE_BPM
+                }
+                val client = HttpClient(Android) {
+                    install(ClientContentNegotiation) {
+                        json()
+                    }
+                }
                 client.post("http://localhost:$PORT_LISTEN") {
                     contentType(ContentType.Application.Json)
                     setBody(Request(bpm))
                 }
-            } catch (e: Exception) {
-                Log.d(TAG, e.localizedMessage, e)
+                emit(bpm++)
+                delay(Duration.ofSeconds(1))
             }
         }
     }

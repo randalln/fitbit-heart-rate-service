@@ -14,22 +14,34 @@
         android:textColor="?android:attr/textColorPrimaryInverse"
         android:textSize="20sp"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/text_bpm"
+        app:layout_constraintBottom_toTopOf="@+id/heart"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         tools:visibility="visible" />
+
+    <ImageView
+        android:id="@+id/heart"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:src="@drawable/ic_heart"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/text_bpm"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="0"
+        android:gravity="center"
+        android:text="@string/bpm_init_val"
         android:textColor="?android:attr/textColorPrimaryInverse"
         android:textSize="100sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="110" />
 
     <Button
         android:id="@+id/start"
@@ -38,13 +50,13 @@
         android:text="@string/start"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_bpm" />
+        app:layout_constraintTop_toBottomOf="@+id/heart" />
 
     <Button
-        android:id="@+id/heartbeat"
+        android:id="@+id/fake_bpm"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/fake_bpm"
+        android:text="@string/toggle_fake_bpm"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
