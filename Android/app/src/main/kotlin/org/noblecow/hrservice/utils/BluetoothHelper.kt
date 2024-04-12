@@ -243,12 +243,9 @@ class BluetoothHelper @Inject constructor(
             BluetoothGattService.SERVICE_TYPE_PRIMARY
         )
 
-        // Current Time characteristic
         val characteristic = BluetoothGattCharacteristic(
             hrmCharacteristicUUID,
-            // Read-only characteristic, supports notifications
-            BluetoothGattCharacteristic.PROPERTY_READ or
-                BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+            BluetoothGattCharacteristic.PROPERTY_NOTIFY,
             BluetoothGattCharacteristic.PERMISSION_READ
         )
         val descriptor = BluetoothGattDescriptor(
