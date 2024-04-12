@@ -91,13 +91,23 @@ class BluetoothHelper @Inject constructor(
                     status: Int,
                     newState: Int
                 ) {
-                    if (newState == BluetoothProfile.STATE_CONNECTED) {
-                        Log.i(TAG, "BluetoothDevice CONNECTED: $device")
-                    } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                        Log.i(TAG, "BluetoothDevice DISCONNECTED: $device")
-                        // Remove device from any active subscriptions
-                        registeredDevices.remove(device)
-                        trySend(null)
+                    when (newState) {
+                        BluetoothProfile.STATE_CONNECTED -> {
+                            Log.i(TAG, "BluetoothDevice CONNECTED: $device $status $newState")
+                            trySend(device)
+                        }
+                        BluetoothProfile.STATE_DISCONNECTED -> {
+                            Log.i(TAG, "BluetoothDevice DISCONNECTED: $device $status")
+                            // Remove device from any active subscriptions
+                            registeredDevices.remove(device)
+                            trySend(null)
+                        }
+                        else -> {
+                            Log.i(
+                                TAG,
+                                "BluetoothDevice onConnectionStateChange ${device.address} $status $newState"
+                            )
+                        }
                     }
                 }
 
@@ -351,9 +361,7 @@ class BluetoothHelper @Inject constructor(
             } ?: trySend(ERROR_ADVERTISING_GENERIC)
 
             awaitClose {
-                bluetoothManager.adapter?.bluetoothLeAdvertiser?.stopAdvertising(
-                    advertiseCallback
-                )
+                bluetoothManager.adapter?.bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback)
             }
         }
     }

@@ -44,7 +44,7 @@ android {
         applicationId = "org.noblecow.hrservice"
         minSdk = 27
         targetSdk = 34
-        versionCode = 3
+        versionCode = 4
         versionName = "0.1"
     }
     buildFeatures {
