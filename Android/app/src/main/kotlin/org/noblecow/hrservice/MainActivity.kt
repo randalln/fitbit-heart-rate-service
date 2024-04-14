@@ -92,16 +92,15 @@ class MainActivity : FragmentActivity() {
                 enableBluetoothLauncher.launch(intent)
             }
             is UiState.AwaitingClient -> {
-                bpmText.text = uiState.bpm.toString()
             }
             is UiState.ClientConnected -> {
-                bpmText.text = uiState.bpm.toString()
             }
             is UiState.Error -> {
                 displayError(uiState.errorType)
             }
         }
 
+        bpmText.text = uiState.bpm.toString()
         startButton.visibility = if (uiState.showStart) View.VISIBLE else View.GONE
         status.visibility = if (uiState.showClientStatus) View.VISIBLE else View.GONE
     }

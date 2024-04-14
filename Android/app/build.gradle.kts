@@ -105,10 +105,15 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.serialization.kotlinx)
+    implementation(libs.ktor.server.call.logging)
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.status.pages)
+
+    // For Ktor logging
+    debugImplementation(libs.slf4j.api)
+    debugImplementation(libs.logback.android)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
