@@ -6,7 +6,7 @@ This lets you share real time heart rate data from the Fitbit watch with exercis
 
 ### You can help
 Google requires testing by a certain number of users in the [closed alpha on Google Play](https://play.google.com/apps/testing/org.noblecow.hrservice) before publishing.<br>
-Just drop me an e-mail at **randallndev@gmail.com** to join the test!
+Just drop me an e-mail at [randallndev@gmail.com](mailto:randallndev@gmail.com) to join the test!
 
 ![Apps](./apps.jpg)
 
