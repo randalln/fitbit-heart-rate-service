@@ -23,14 +23,12 @@ I still don't know much about Fitbit watch app development, so hopefully I'll ge
 2. Install the Fitbit watch app from the [Fitbit Gallery](https://gallery.fitbit.com/details/6503a799-37f7-43bf-8775-23f1742e2a4e)  
    OR  
    Import the Fitbit app into [Fitbit Studio](https://studio.fitbit.com), start the developer bridge on your watch, and transfer the app.
-3. Download and install the APK onto your Android device from the [releases](https://github.com/randalln/fitbit-heart-rate-service/releases) page  
-   OR
-   Build the project in Android Studio  
+3. Opt into [closed testing](#you-can-help) on Google Play  
+   OR  
+   Download and install the APK onto your Android device from the [releases](https://github.com/randalln/fitbit-heart-rate-service/releases) page  
 4. If you plan on running a fitness app on a mobile device, e.g. Strava, you'll need a second device 
 on which to run it (since the device with the Fitbit app on it will be running the HR Monitor app and 
 playing the role of the heart rate monitor)
-
-**Note: Work is under way to publish the Android app on Google Play, and [you can help](#you-can-help)!**
 
 ## To Use
 
