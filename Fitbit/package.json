@@ -1,9 +1,10 @@
 {
   "devDependencies": {
-    "@fitbit/sdk": "~5.0.0"
+    "@fitbit/sdk": "~4.2.0",
+    "@fitbit/sdk-cli": "^1.7.3"
   },
   "fitbit": {
-    "appUUID": "6503a799-37f7-43bf-8775-23f1742e2a4e",
+    "appUUID": "799d08f9-77d4-4a73-81dc-b187159a7124",
     "appType": "app",
     "appDisplayName": "HR Service",
     "iconFile": "resources/icon.png",
@@ -13,8 +14,10 @@
       "access_internet"
     ],
     "buildTargets": [
-      "vulcan",
-      "atlas"
+      "higgs",
+      "meson",
+      "gemini",
+      "mira"
     ],
     "i18n": {
       "en-US": {
@@ -22,5 +25,9 @@
       }
     },
     "defaultLanguage": "en-US"
+  },
+  "scripts": {
+    "build": "fitbit-build",
+    "debug": "fitbit"
   }
 }
