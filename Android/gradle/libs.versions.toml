@@ -1,6 +1,7 @@
 [versions]
-activity = "1.8.2"
-agp = "8.3.1"
+activity = "1.9.0"
+agp = "8.3.2"
+blessedKotlin = "3.0.7"
 constraintlayout = "2.1.4"
 detekt = "1.23.3"
 fragment = "1.6.2"
@@ -12,6 +13,7 @@ kotlinxCoroutinesTest = "1.8.1-Beta"
 ksp = "1.9.22-1.0.17"
 ktor = "2.3.9"
 logbackAndroid = "3.0.0"
+logbackClassic = "1.3.5"
 mockk = "1.13.10"
 slf4jApi = "2.0.7"
 turbine = "1.1.0"
@@ -19,6 +21,7 @@ turbine = "1.1.0"
 [libraries]
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activity" }
+blessed-kotlin = { module = "com.github.weliem:blessed-kotlin", version.ref = "blessedKotlin" }
 constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
 fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
 hilt = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
@@ -35,6 +38,7 @@ ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
 logback-android = { module = "com.github.tony19:logback-android", version.ref = "logbackAndroid" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logbackClassic" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4jApi" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }

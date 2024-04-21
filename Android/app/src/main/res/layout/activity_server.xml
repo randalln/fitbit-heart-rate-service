@@ -21,6 +21,7 @@
 
     <ImageView
         android:id="@+id/heart"
+        android:contentDescription="@string/desc_heart_background"
         android:layout_width="300dp"
         android:layout_height="300dp"
         android:src="@drawable/ic_heart"

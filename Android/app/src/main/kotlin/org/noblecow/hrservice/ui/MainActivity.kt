@@ -1,4 +1,4 @@
-package org.noblecow.hrservice
+package org.noblecow.hrservice.ui
 
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
@@ -18,6 +18,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import org.noblecow.hrservice.BuildConfig
+import org.noblecow.hrservice.R
 import org.noblecow.hrservice.databinding.ActivityServerBinding
 
 private const val TAG = "MainActivity"
@@ -42,8 +44,9 @@ class MainActivity : FragmentActivity() {
         registerForActivityResult(StartActivityForResult()) {
             if (it.resultCode != RESULT_OK) {
                 viewModel.userDeclinedBluetoothEnable()
+            } else {
+                viewModel.receivePermissions(emptyMap())
             }
-            // BroadcastReceiver that we register elsewhere handles BT being turned on
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -105,7 +108,7 @@ class MainActivity : FragmentActivity() {
         status.visibility = if (uiState.showClientStatus) View.VISIBLE else View.GONE
     }
 
-    private fun displayError(error: HeartRateError) {
+    private fun displayError(error: GeneralError) {
         getErrorString(error).run {
             if (error.fatal) {
                 FatalErrorDialogFragment.newInstance(this)
@@ -123,12 +126,12 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private fun getErrorString(error: HeartRateError): String {
+    private fun getErrorString(error: GeneralError): String {
         return when (error) {
-            HeartRateError.BleHardware -> getString(R.string.error_hardware)
-            HeartRateError.BtAdvertise -> getString(R.string.error_advertise)
-            HeartRateError.BtGatt -> getString(R.string.error_gatt)
-            HeartRateError.PermissionsDenied() -> getString(R.string.permissions_denied)
+            GeneralError.BleHardware -> getString(R.string.error_hardware)
+            GeneralError.BtAdvertise -> getString(R.string.error_advertise)
+            // HeartRateError.BtGatt -> getString(R.string.error_gatt)
+            GeneralError.PermissionsDenied() -> getString(R.string.permissions_denied)
             else -> error.message ?: getString(R.string.error_unknown)
         }
     }

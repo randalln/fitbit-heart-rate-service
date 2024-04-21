@@ -1,4 +1,4 @@
-package org.noblecow.hrservice
+package org.noblecow.hrservice.ui
 
 sealed interface UiState {
     val bpm: Int
@@ -22,19 +22,17 @@ sealed interface UiState {
         override val bpm: Int,
         override val sendingFakeBPM: Boolean = false
     ) : UiState
-    data class Error(val errorType: HeartRateError) : UiState
+    data class Error(val errorType: GeneralError) : UiState
 }
 
-sealed interface HeartRateError {
+sealed interface GeneralError {
     val fatal: Boolean
         get() = true
     val message: String?
         get() = null
 
-    data object BleHardware : HeartRateError
-    data object BtAdvertise : HeartRateError
-    data object BtGatt : HeartRateError
-    data class Ktor(override val message: String) : HeartRateError
-    data class PermissionsDenied(override val fatal: Boolean = false) : HeartRateError
-    data class Uncategorized(override val message: String) : HeartRateError
+    data object BleHardware : GeneralError
+    data object BtAdvertise : GeneralError
+    data class Ktor(override val message: String) : GeneralError
+    data class PermissionsDenied(override val fatal: Boolean = false) : GeneralError
 }

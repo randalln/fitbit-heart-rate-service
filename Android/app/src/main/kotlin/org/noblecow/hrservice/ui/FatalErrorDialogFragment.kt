@@ -1,9 +1,10 @@
-package org.noblecow.hrservice
+package org.noblecow.hrservice.ui
 
 import android.app.AlertDialog
 import android.app.Dialog
 import android.os.Bundle
 import androidx.fragment.app.DialogFragment
+import org.noblecow.hrservice.R
 
 private const val ARG_ERROR_MESSAGE = "errorMessage"
 
