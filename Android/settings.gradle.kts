@@ -1,3 +1,5 @@
+@file:Suppress("UnstableApiUsage")
+
 pluginManagement {
     repositories {
         google()
@@ -8,10 +10,12 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
+        maven { setUrl("https://jitpack.io") }
     }
 }
 
-rootProject.name = "HR Service"
+rootProject.name = "Heart Rate Monitor"
 include(":app")

@@ -19,24 +19,24 @@ I still don't know much about Fitbit watch app development, so hopefully I'll ge
 
 ## Requirements
 
-1. A Fitbit Sense or Versa 3 smart watch and an Android phone running Android greater or equal to 8.1.
-2. Install the Fitbit watch app from the [Fitbit Gallery](https://gallery.fitbit.com/details/6503a799-37f7-43bf-8775-23f1742e2a4e)  
+1. A Fitbit Sense or Versa 3 smart watch and an Android phone running Android greater or equal to 9.0.
+2. Install the "HR Service" Fitbit watch app from the [Fitbit Gallery](https://gallery.fitbit.com/details/6503a799-37f7-43bf-8775-23f1742e2a4e).  
    OR  
    Import the Fitbit app into [Fitbit Studio](https://studio.fitbit.com), start the developer bridge on your watch, and transfer the app.
-3. Opt into [closed testing](#you-can-help) on Google Play  
+3. Opt into [closed testing](#you-can-help) on Google Play.  
    OR  
-   Download and install the APK onto your Android device from the [releases](https://github.com/randalln/fitbit-heart-rate-service/releases) page  
+   Download and install the APK onto your Android device from the [releases](https://github.com/randalln/fitbit-heart-rate-service/releases) page.  
 4. If you plan on running a fitness app on a mobile device, e.g. Strava, you'll need a second device 
-on which to run it (since the device with the Fitbit app on it will be running the HR Monitor app and 
-playing the role of the heart rate monitor)
+on which to run it, since the device with the Fitbit app on it will also be running the HR Monitor app and 
+playing the role of the heart rate monitor.
 
 ## To Use
 
-1. Start the HR Service app on the Fitbit watch.
-2. Start the HR Monitor app on the Android device.  
-   You should see the BPM value update with each new received value.
+1. Start the "HR Service" app on the Fitbit watch.
+2. Start the "HR Monitor" app on the Android device.
+   - You should see the BPM value update with each new received value.
 3. On your exercise equipment (or app on your second mobile device), search for a Bluetooth heart rate monitor.  
-   The mock heart rate monitor will have the same name as the Android device.
+   - The mock heart rate monitor will have the same name as the Android device.
 
 ### Disclaimer
 

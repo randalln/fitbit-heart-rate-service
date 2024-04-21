@@ -1,9 +1,6 @@
-package org.noblecow.hrservice
+package org.noblecow.hrservice.ui
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
-import android.content.pm.PackageManager
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,77 +33,58 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.delay
 import kotlinx.serialization.Serializable
-import org.noblecow.hrservice.utils.BluetoothHelper
-import org.noblecow.hrservice.utils.PermissionsHelper
+import org.noblecow.hrservice.BuildConfig
+import org.noblecow.hrservice.data.AdvertisingState
+import org.noblecow.hrservice.data.BluetoothRepository
+import org.noblecow.hrservice.data.HardwareState
+import org.slf4j.LoggerFactory
 
-private const val PORT_LISTEN = 12345
-private const val TAG = "HRViewModel"
-internal const val FAKE_BPM = 60
-private const val FAKE_BPM_MAX = 10
+internal const val PORT_LISTEN = 12345
+internal const val FAKE_BPM_START = 60
+private const val FAKE_BPM_END = 70
 
 @HiltViewModel
 @Suppress("TooManyFunctions")
-class HRViewModel @Inject constructor(
-    private val bluetoothHelper: BluetoothHelper,
-    private val permissionsHelper: PermissionsHelper
+internal class HRViewModel @Inject constructor(
+    private val bluetoothRepository: BluetoothRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Idle())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
     private var advertisingJob: Job? = null
-    private var bluetoothReceiverJob: Job? = null
-    private var fakeBPMJob: Job? = null
-    private var gattServerJob: Job? = null
+    private var clientConnectionJob: Job? = null
+    private var fakeBpmJob: Job? = null
     private var ktorServer: BaseApplicationEngine? = null
-
+    private var clientConnected = false
     private var currentRequest: Request? = null
+    private val logger = LoggerFactory.getLogger(javaClass.simpleName)
 
-    internal fun confirmPermissions() {
-        val permissionsNeeded = bluetoothHelper.permissionsRequired.filter { permission ->
-            permissionsHelper.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED
-        }
-
-        if (permissionsNeeded.isNotEmpty()) {
-            transitionState(UiState.RequestPermissions(permissionsNeeded))
+    fun confirmPermissions() {
+        if (!bluetoothRepository.permissionsGranted()) {
+            val permissionsNeeded = bluetoothRepository.getMissingPermissions()
+            transitionState(UiState.RequestPermissions(permissionsNeeded.toList()))
         } else {
             receivePermissions(emptyMap())
         }
     }
 
-    internal fun receivePermissions(permissions: Map<String, Boolean>) {
+    fun receivePermissions(permissions: Map<String, Boolean>) {
         if (permissions.containsValue(false)) {
-            transitionState(UiState.Error(HeartRateError.PermissionsDenied()))
+            transitionState(UiState.Error(GeneralError.PermissionsDenied()))
         } else {
-            val bleState = bluetoothHelper.getBLEState()
-            if (bleState == BluetoothHelper.BLEState.HARDWARE_UNSUITABLE) {
-                transitionState(UiState.Error(HeartRateError.BleHardware))
+            val bleState = bluetoothRepository.getHardwareState()
+            if (bleState == HardwareState.HARDWARE_UNSUITABLE) {
+                transitionState(UiState.Error(GeneralError.BleHardware))
             } else {
-                if (bluetoothReceiverJob == null) {
-                    bluetoothReceiverJob = viewModelScope.launch {
-                        bluetoothHelper.getBluetoothReceiverFlow().collect { state ->
-                            when (state) {
-                                BluetoothAdapter.STATE_ON -> {
-                                    Log.d(TAG, "Bluetooth just enabled...starting services")
-                                    startServices()
-                                }
-
-                                BluetoothAdapter.STATE_OFF -> {
-                                    Log.d(TAG, "Bluetooth just disabled...stopping services")
-                                    stopServices()
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (bleState == BluetoothHelper.BLEState.READY) {
-                    Log.d(TAG, "Bluetooth enabled...starting services")
+                if (bleState == HardwareState.READY) {
+                    logger.debug("Bluetooth enabled...starting services")
                     startServices()
                 } else {
                     transitionState(UiState.RequestEnableBluetooth)
@@ -117,28 +95,39 @@ class HRViewModel @Inject constructor(
 
     @SuppressLint("MissingPermission")
     private fun startServices() {
-        advertisingJob = viewModelScope.launch {
-            bluetoothHelper.getAdvertisingFlow().collect {
-                transitionState(UiState.Error(HeartRateError.BtAdvertise))
-                stopServices()
+        if (!bluetoothRepository.isInitialized) {
+            bluetoothRepository.initialize()
+        }
+        if (advertisingJob == null) {
+            advertisingJob = viewModelScope.launch {
+                bluetoothRepository.getAdvertisingFlow()
+                    .distinctUntilChanged()
+                    .collect {
+                        when (it) {
+                            AdvertisingState.Started -> startKtorServer() // 2. Start web server
+                            AdvertisingState.Stopped -> stopServices()
+                            is AdvertisingState.Failure -> {
+                                transitionState(UiState.Error(GeneralError.BtAdvertise))
+                                stopServices()
+                            }
+                        }
+                    }
             }
         }
-        gattServerJob = viewModelScope.launch {
-            bluetoothHelper.getGattServerFlow().collect { device ->
-                device?.let {
-                    Log.d(TAG, "gattServerFlow: ${device.address} ${device.type}")
+        if (clientConnectionJob == null) {
+            clientConnectionJob = viewModelScope.launch {
+                bluetoothRepository.getClientConnectionFlow().collect { connected ->
+                    clientConnected = connected
+                    if (_uiState.value is UiState.AwaitingClient ||
+                        _uiState.value is UiState.ClientConnected
+                    ) {
+                        displayBPM(_uiState.value.bpm)
+                    }
                 }
             }
         }
 
-        startKtorServer()
-        transitionState(
-            if (bluetoothHelper.registeredDevices.size > 0) {
-                UiState.ClientConnected(0)
-            } else {
-                UiState.AwaitingClient(0)
-            }
-        )
+        bluetoothRepository.startAdvertising() // 1. Start advertising
     }
 
     private fun startKtorServer() {
@@ -167,53 +156,43 @@ class HRViewModel @Inject constructor(
                     call.receive<Request>().run {
                         currentRequest = this
                         displayBPM(this.bpm)
-                        bluetoothHelper.notifyRegisteredDevices(this.bpm)
+                        bluetoothRepository.notifyHeartRate(this.bpm)
                         call.respond(this)
                     }
                 }
             }
         }.start(wait = false)
+
+        displayBPM(0)
     }
 
     private fun handleKtorError(e: Throwable) {
         val message = e.localizedMessage ?: e::javaClass.name
-        Log.e(TAG, message, e)
-        transitionState(UiState.Error(HeartRateError.Ktor(message)))
+        logger.error(message, e)
+        transitionState(UiState.Error(GeneralError.Ktor(message)))
         stopServices(updateUI = false)
     }
 
     private fun displayBPM(bpm: Int) {
         transitionState(
-            if (bluetoothHelper.registeredDevices.size > 0) {
+            if (clientConnected) {
                 UiState.ClientConnected(
                     bpm = bpm,
-                    sendingFakeBPM = fakeBPMJob != null
+                    sendingFakeBPM = fakeBpmJob != null
                 )
             } else {
                 UiState.AwaitingClient(
                     bpm,
-                    sendingFakeBPM = fakeBPMJob != null
+                    sendingFakeBPM = fakeBpmJob != null
                 )
             }
         )
     }
 
     internal fun stopServices(updateUI: Boolean = true) {
-        fakeBPMJob?.let {
+        fakeBpmJob?.let {
             it.cancel()
-            fakeBPMJob = null
-        }
-        advertisingJob?.let {
-            it.cancel()
-            advertisingJob = null
-        }
-        bluetoothReceiverJob?.let {
-            it.cancel()
-            bluetoothReceiverJob = null
-        }
-        gattServerJob?.let {
-            it.cancel()
-            gattServerJob = null
+            fakeBpmJob = null
         }
         ktorServer?.let {
             it.stop()
@@ -228,15 +207,15 @@ class HRViewModel @Inject constructor(
     internal fun userDeclinedBluetoothEnable() = transitionState(UiState.Idle())
 
     internal fun toggleFakeBPM() {
-        fakeBPMJob?.let {
+        fakeBpmJob?.let {
             it.cancel()
-            fakeBPMJob = null
+            fakeBpmJob = null
             displayBPM(0)
         } ?: run {
-            fakeBPMJob = viewModelScope.launch {
+            fakeBpmJob = viewModelScope.launch {
                 getFakeBPMFlow()
                     .catch {
-                        Log.d(TAG, it.localizedMessage, it)
+                        logger.debug(it.localizedMessage, it)
                     }
                     .collect {
                         val client = HttpClient(Android) {
@@ -254,10 +233,10 @@ class HRViewModel @Inject constructor(
     }
 
     private suspend fun getFakeBPMFlow(): Flow<Int> = flow {
-        var bpm = FAKE_BPM
+        var bpm = FAKE_BPM_START
         while (true) {
-            if (bpm > FAKE_BPM + FAKE_BPM_MAX) {
-                bpm = FAKE_BPM
+            if (bpm > FAKE_BPM_END) {
+                bpm = FAKE_BPM_START
             }
             emit(bpm++)
             delay(Duration.ofSeconds(1))
@@ -265,7 +244,7 @@ class HRViewModel @Inject constructor(
     }
 
     private fun transitionState(newUiState: UiState) {
-        Log.d(TAG, "Transitioning to new state: ${newUiState::class.java}")
+        logger.debug("Transitioning to new state: {}", newUiState)
         _uiState.update {
             newUiState
         }
@@ -273,7 +252,7 @@ class HRViewModel @Inject constructor(
 }
 
 @Serializable
-private data class Request(val bpm: Int)
+internal data class Request(val bpm: Int)
 
 @Serializable
 private data class Response(val status: String)

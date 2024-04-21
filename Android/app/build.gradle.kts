@@ -42,10 +42,10 @@ android {
 
     defaultConfig {
         applicationId = "org.noblecow.hrservice"
-        minSdk = 27
+        minSdk = 28
         targetSdk = 34
-        versionCode = 4
-        versionName = "0.1.0"
+        versionCode = 5
+        versionName = "0.2.0"
     }
     buildFeatures {
         viewBinding = true
@@ -101,6 +101,8 @@ dependencies {
     implementation(libs.fragment)
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
+
+    implementation(libs.blessed.kotlin)
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.client.core)
@@ -110,13 +112,16 @@ dependencies {
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.status.pages)
-
-    // For Ktor logging
-    debugImplementation(libs.slf4j.api)
-    debugImplementation(libs.logback.android)
+    implementation(libs.logback.android)
+    implementation(libs.slf4j.api)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.logback.classic)
     testImplementation(libs.turbine)
+}
+
+configurations.testImplementation {
+    exclude(module = "logback-android")
 }
