@@ -3,7 +3,11 @@
 Entirely based off of [@randalln's work](https://github.com/randalln/fitbit-heart-rate-service).
 
 Confirmed working with Versa 2/Samsung Galaxy S21 Ultra, connected to Peloton equipment. Basic testing using Fitbit OS Simulator looks promising for the other OS 4 devices.
-Much like the previous author, I too was excited to find [@mogenson's app](https://github.com/mogenson/fitbit-heart-rate-service) after being disappointed with lackluster device capabilities.
+Much like the previous author, I too was excited to find [@mogenson's app](https://github.com/mogenson/fitbit-heart-rate-service) after being disappointed with lackluster device capabilities. I bought one of those Peloton HRM armbands which apparently are often dead on arrival with no way to fix without popping it open. So, instead I found out about the work being done on making Fitbits compatible and decided to use my old one laying around to try and get something working.
+
+
+![processed-711D83FB-F0C3-43D7-BA2C-0044E4689103](https://github.com/cwcpers/versa2-heart-rate-service/assets/152840632/20f6e792-a361-4c80-9575-fbcdff23e244)
+
 
 ## Original Description
 
@@ -14,10 +18,9 @@ Currently, the Fitbit smart watches measure heart rate, but do not advertise as 
 ## Requirements
 
 1. A Fitbit Versa 2, Versa Lite, Versa, or Ionic smart watch and an Android phone running Android greater or equal to 8.1.
-2. Install the Fitbit watch app from the ~~[Fitbit Gallery](https://gallery.fitbit.com/details/799d08f9-77d4-4a73-81dc-b187159a7124)~~
-   NEW link to OS 4 compatible app on the [Fitbit Gallery - PENDING REVIEW](https://gallery.fitbit.com/details/799d08f9-77d4-4a73-81dc-b187159a7124)
+2. Install the Fitbit OS 4 compatible app on the [Fitbit Gallery - PENDING REVIEW](https://gallery.fitbit.com/details/799d08f9-77d4-4a73-81dc-b187159a7124?key=c05ef0f4-c8f7-4459-94f7-50a209108fc6)
    OR  
-   Build and run the code using the [Fitbit CLI](https://dev.fitbit.com/getting-started/), start the developer bridge on your watch, and transfer the app.
+   Build and run the code using the [Fitbit CLI](https://dev.fitbit.com/getting-started/) with settings set to use SDK 4.2, start the developer bridge on your watch, and transfer the app.
 4. Opt into [@randalln's closed testing](https://github.com/randalln/fitbit-heart-rate-service) on Google Play  
    OR  
    Download and install the APK onto your Android device from his [releases](https://github.com/randalln/fitbit-heart-rate-service/releases) page  
