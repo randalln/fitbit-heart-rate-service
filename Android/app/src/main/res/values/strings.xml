@@ -6,9 +6,11 @@
     <string name="desc_heart_background">heart background</string>
     <string name="error_advertise">Bluetooth advertising error</string>
     <string name="error_hardware">Required bluetooth hardware not present</string>
+    <string name="error_ktor">Web server error: %s</string>
     <string name="error_unknown">Unknown error encountered</string>
     <string name="exit">Exit</string>
-    <string name="toggle_fake_bpm">Fake BPM</string>
     <string name="permissions_denied">Required permissions denied</string>
     <string name="start">Start</string>
+    <string name="title_libraries">Libraries</string>
+    <string name="toggle_fake_bpm">Fake BPM</string>
 </resources>

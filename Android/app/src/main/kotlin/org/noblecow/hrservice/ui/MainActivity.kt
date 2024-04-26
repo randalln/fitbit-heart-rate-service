@@ -1,143 +1,65 @@
 package org.noblecow.hrservice.ui
 
-import android.bluetooth.BluetoothAdapter
-import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.view.View
 import android.view.WindowManager
-import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
-import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
-import androidx.activity.viewModels
-import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
+import androidx.navigation.createGraph
+import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.fragment.fragment
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.navigateUp
+import androidx.navigation.ui.setupActionBarWithNavController
+import com.mikepenz.aboutlibraries.ui.LibsSupportFragment
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
-import org.noblecow.hrservice.BuildConfig
 import org.noblecow.hrservice.R
-import org.noblecow.hrservice.databinding.ActivityServerBinding
-
-private const val TAG = "MainActivity"
+import org.noblecow.hrservice.databinding.ActivityMainBinding
 
 @AndroidEntryPoint
-class MainActivity : FragmentActivity() {
-
-    private val viewModel: HRViewModel by viewModels()
-
-    private lateinit var bpmText: TextView
-    private lateinit var startButton: Button
-    private lateinit var status: TextView
-    private lateinit var fakeBPM: Button
-
-    private val requestMultiplePermissions = registerForActivityResult(
-        RequestMultiplePermissions()
-    ) { permissions ->
-        viewModel.receivePermissions(permissions)
-    }
-
-    private val enableBluetoothLauncher =
-        registerForActivityResult(StartActivityForResult()) {
-            if (it.resultCode != RESULT_OK) {
-                viewModel.userDeclinedBluetoothEnable()
-            } else {
-                viewModel.receivePermissions(emptyMap())
-            }
-        }
+class MainActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var appBarConfiguration: AppBarConfiguration
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        val binding = ActivityServerBinding.inflate(layoutInflater)
-        bpmText = binding.textBpm
-        startButton = binding.start.apply {
-            setOnClickListener {
-                viewModel.confirmPermissions()
-            }
-        }
-        status = binding.status
-        fakeBPM = binding.fakeBpm.apply {
-            if (BuildConfig.DEBUG) {
-                visibility = View.VISIBLE
-                setOnClickListener {
-                    viewModel.toggleFakeBPM()
-                }
-            }
-        }
+        binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        setSupportActionBar(binding.topAppBar)
+
+        val navHostFragment = supportFragmentManager.findFragmentById(
+            binding.navHostFragment.id
+        ) as NavHostFragment
+        val navController = navHostFragment.navController.apply {
+            addOnDestinationChangedListener { _, destination, _ ->
+                binding.topAppBar.isTitleCentered = destination.route == graph.startDestinationRoute
+            }
+        }
+        navController.graph = navController.createGraph(
+            startDestination = "main"
+        ) {
+            fragment<MainFragment>(NavRoutes.MAIN) {
+                label = resources.getString(R.string.app_name)
+            }
+            fragment<LibsSupportFragment>(NavRoutes.LIBRARIES) {
+                label = resources.getString(R.string.title_libraries)
+            }
+        }
+        appBarConfiguration = AppBarConfiguration(navController.graph)
+        setupActionBarWithNavController(navController, appBarConfiguration)
 
         // Devices with a display should not go to sleep
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect {
-                    onStateChange(it)
-                }
-            }
-        }
     }
 
-    private fun onStateChange(uiState: UiState) {
-        when (uiState) {
-            is UiState.Idle -> {
-            }
-            is UiState.RequestPermissions -> {
-                requestMultiplePermissions.launch(uiState.permissions.toTypedArray())
-            }
-            UiState.RequestEnableBluetooth -> {
-                Log.d(TAG, "Need to enable bluetooth")
-                val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                enableBluetoothLauncher.launch(intent)
-            }
-            is UiState.AwaitingClient -> {
-            }
-            is UiState.ClientConnected -> {
-            }
-            is UiState.Error -> {
-                displayError(uiState.errorType)
-            }
-        }
+    override fun onSupportNavigateUp(): Boolean {
+        val navController = findNavController(binding.navHostFragment.id)
 
-        bpmText.text = uiState.bpm.toString()
-        startButton.visibility = if (uiState.showStart) View.VISIBLE else View.GONE
-        status.visibility = if (uiState.showClientStatus) View.VISIBLE else View.GONE
-    }
-
-    private fun displayError(error: GeneralError) {
-        getErrorString(error).run {
-            if (error.fatal) {
-                FatalErrorDialogFragment.newInstance(this)
-                    .apply {
-                        isCancelable = false
-                    }
-                    .show(supportFragmentManager, "error")
-            } else {
-                Toast.makeText(
-                    this@MainActivity,
-                    this,
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
-    }
-
-    private fun getErrorString(error: GeneralError): String {
-        return when (error) {
-            GeneralError.BleHardware -> getString(R.string.error_hardware)
-            GeneralError.BtAdvertise -> getString(R.string.error_advertise)
-            // HeartRateError.BtGatt -> getString(R.string.error_gatt)
-            GeneralError.PermissionsDenied() -> getString(R.string.permissions_denied)
-            else -> error.message ?: getString(R.string.error_unknown)
-        }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        viewModel.stopServices()
+        return navController.navigateUp(
+            appBarConfiguration
+        ) || super.onSupportNavigateUp()
     }
 }
