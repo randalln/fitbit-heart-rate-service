@@ -4,6 +4,10 @@ A pair of apps: one for a Fitbit smart watch, and one for an Android phone, that
 
 This lets you share real time heart rate data from the Fitbit watch with exercise equipment like Peloton, Strava, Zwift, or Wahoo.
 
+[@cwcpers](https://github.com/cwcpers/versa2-heart-rate-service?tab=readme-ov-file) has gotten the 
+[watch app](https://gallery.fitbit.com/details/799d08f9-77d4-4a73-81dc-b187159a7124?key=c05ef0f4-c8f7-4459-94f7-50a209108fc6)
+working on OS 4 devices too! (Versa 2, Versa Lite, Versa, Ionic)
+
 ### You can help
 Google requires testing by a certain number of users in the [closed alpha on Google Play](https://play.google.com/apps/testing/org.noblecow.hrservice) before publishing.<br>
 Just drop me an e-mail at [randallndev@gmail.com](mailto:randallndev@gmail.com) to join the test!
