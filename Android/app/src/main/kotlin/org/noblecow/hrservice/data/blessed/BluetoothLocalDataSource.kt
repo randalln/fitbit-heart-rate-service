@@ -41,8 +41,6 @@ class BluetoothLocalDataSource @Inject constructor(
     private val bluetoothManager: BluetoothManager?,
     dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
-    var isInitialized = false
-        private set
     private val _advertisingFlow = MutableSharedFlow<AdvertisingState>(replay = 1)
     val advertisingFlow = _advertisingFlow.asSharedFlow()
     private val _clientConnectionFlow = MutableStateFlow(false)
@@ -50,6 +48,7 @@ class BluetoothLocalDataSource @Inject constructor(
     private val localScope: CoroutineScope = CoroutineScope(Job() + dispatcher)
     private val serviceImplementations = HashMap<BluetoothGattService, Service>()
     private var heartRateService: HeartRateService? = null
+    private var peripheralManager: BluetoothPeripheralManager? = null
 
     @Suppress("TooManyFunctions")
     private val peripheralManagerCallback: BluetoothPeripheralManagerCallback =
@@ -192,17 +191,6 @@ class BluetoothLocalDataSource @Inject constructor(
                 }
             }
         }
-    private var peripheralManager: BluetoothPeripheralManager? = null
-
-    init {
-        bluetoothManager?.let {
-            peripheralManager = BluetoothPeripheralManager(
-                context,
-                bluetoothManager,
-                peripheralManagerCallback
-            )
-        }
-    }
 
     internal fun getHardwareState(): HardwareState {
         return bluetoothManager?.let { manager ->
@@ -239,34 +227,37 @@ class BluetoothLocalDataSource @Inject constructor(
         }
     }
 
-    private fun setupServices() {
-        peripheralManager?.let { peripheralManager ->
-            for (service in serviceImplementations.keys) {
-                peripheralManager.add(service)
+    private fun initialize() {
+        bluetoothManager?.let {
+            peripheralManager = BluetoothPeripheralManager(
+                context,
+                bluetoothManager,
+                peripheralManagerCallback
+            ).apply {
+                bluetoothManager.adapter.name = Build.MODEL
+
+                openGattServer()
+                removeAllServices()
+
+                heartRateService = HeartRateService(this).also {
+                    serviceImplementations[it.service] = it // More services in the example code
+                }
+                for (service in serviceImplementations.keys) {
+                    add(service)
+                }
             }
         }
     }
 
-    fun initialize() {
-        bluetoothManager?.let {
-            peripheralManager?.let { peripheralManager ->
-                bluetoothManager.adapter.name = Build.MODEL
-
-                peripheralManager.openGattServer()
-                peripheralManager.removeAllServices()
-
-                heartRateService = HeartRateService(peripheralManager).also {
-                    serviceImplementations[it.service] = it // More services in the example code
-                }
-                setupServices()
-                isInitialized = true
-            }
-        }
+    fun stop() {
+        peripheralManager?.close()
+        peripheralManager = null
     }
 
     fun permissionsGranted() = peripheralManager?.permissionsGranted()
 
     fun startAdvertising() {
+        initialize()
         peripheralManager?.let {
             if (!it.isAdvertising) {
                 val advertiseSettings = AdvertiseSettings.Builder()

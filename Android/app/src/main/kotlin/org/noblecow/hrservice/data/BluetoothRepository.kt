@@ -6,11 +6,6 @@ import org.noblecow.hrservice.data.blessed.BluetoothLocalDataSource
 internal class BluetoothRepository @Inject constructor(
     private val dataSource: BluetoothLocalDataSource
 ) {
-    val isInitialized = dataSource.isInitialized
-
-    fun initialize() {
-        dataSource.initialize()
-    }
     fun getAdvertisingFlow() = dataSource.advertisingFlow
     fun getClientConnectionFlow() = dataSource.clientConnectionFlow
     fun getHardwareState() = dataSource.getHardwareState()
@@ -18,4 +13,5 @@ internal class BluetoothRepository @Inject constructor(
     fun notifyHeartRate(bpm: Int) = dataSource.notifyHeartRate(bpm)
     fun permissionsGranted() = dataSource.permissionsGranted() ?: false
     fun startAdvertising() = dataSource.startAdvertising()
+    fun stop() = dataSource.stop()
 }

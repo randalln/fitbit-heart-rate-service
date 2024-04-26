@@ -25,6 +25,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.aboutLibs)
     kotlin("plugin.serialization") version (libs.versions.kotlin)
 }
 
@@ -44,8 +45,8 @@ android {
         applicationId = "org.noblecow.hrservice"
         minSdk = 28
         targetSdk = 34
-        versionCode = 5
-        versionName = "0.2.0"
+        versionCode = 6
+        versionName = "0.3.0"
     }
     buildFeatures {
         viewBinding = true
@@ -68,9 +69,6 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs["release"]
-            kotlinOptions {
-                allWarningsAsErrors = true
-            }
         }
     }
     packaging {
@@ -88,6 +86,7 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+        allWarningsAsErrors = true
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
@@ -98,10 +97,16 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.activity.ktx)
     implementation(libs.constraintlayout)
-    implementation(libs.fragment)
+    implementation(libs.fragment.ktx)
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
+    implementation(libs.material)
+    implementation(libs.navigation.fragment.ktx)
+    implementation(libs.navigation.ui.ktx)
+    implementation(libs.navigation.dynamic.features.fragment)
 
+    // Third-party libraries
+    implementation(libs.aboutLibs)
     implementation(libs.blessed.kotlin)
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.content.negotiation)

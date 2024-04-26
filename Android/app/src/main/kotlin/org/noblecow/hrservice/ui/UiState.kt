@@ -1,10 +1,8 @@
 package org.noblecow.hrservice.ui
 
-sealed interface UiState {
+internal sealed interface UiState {
     val bpm: Int
         get() = 0
-    val sendingFakeBPM: Boolean
-        get() = false
     val showStart: Boolean
         get() = false
     val showClientStatus: Boolean
@@ -15,13 +13,9 @@ sealed interface UiState {
     data object RequestEnableBluetooth : UiState
     data class AwaitingClient(
         override val bpm: Int,
-        override val sendingFakeBPM: Boolean = false,
         override val showClientStatus: Boolean = true
     ) : UiState
-    data class ClientConnected(
-        override val bpm: Int,
-        override val sendingFakeBPM: Boolean = false
-    ) : UiState
+    data class ClientConnected(override val bpm: Int) : UiState
     data class Error(val errorType: GeneralError) : UiState
 }
 
