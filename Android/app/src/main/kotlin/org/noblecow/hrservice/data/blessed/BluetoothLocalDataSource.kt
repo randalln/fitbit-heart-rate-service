@@ -41,6 +41,7 @@ class BluetoothLocalDataSource @Inject constructor(
     private val bluetoothManager: BluetoothManager?,
     dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
+    private var isInitialized = false
     private val _advertisingFlow = MutableSharedFlow<AdvertisingState>(replay = 1)
     val advertisingFlow = _advertisingFlow.asSharedFlow()
     private val _clientConnectionFlow = MutableStateFlow(false)
@@ -240,6 +241,7 @@ class BluetoothLocalDataSource @Inject constructor(
             for (service in serviceImplementations.keys) {
                 add(service)
             }
+            isInitialized = true
         }
     }
     private var peripheralManager: BluetoothPeripheralManager?
@@ -255,7 +257,9 @@ class BluetoothLocalDataSource @Inject constructor(
     }
 
     fun stop() {
-        peripheralManager?.close()
+        if (isInitialized) {
+            peripheralManager?.close()
+        }
         peripheralManager = null
     }
 
