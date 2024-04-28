@@ -48,7 +48,6 @@ class BluetoothLocalDataSource @Inject constructor(
     private val localScope: CoroutineScope = CoroutineScope(Job() + dispatcher)
     private val serviceImplementations = HashMap<BluetoothGattService, Service>()
     private var heartRateService: HeartRateService? = null
-    private var peripheralManager: BluetoothPeripheralManager? = null
 
     @Suppress("TooManyFunctions")
     private val peripheralManagerCallback: BluetoothPeripheralManagerCallback =
@@ -228,24 +227,30 @@ class BluetoothLocalDataSource @Inject constructor(
     }
 
     private fun initialize() {
-        bluetoothManager?.let {
-            peripheralManager = BluetoothPeripheralManager(
-                context,
-                bluetoothManager,
-                peripheralManagerCallback
-            ).apply {
-                bluetoothManager.adapter.name = Build.MODEL
+        bluetoothManager?.apply {
+            adapter.name = Build.MODEL
+        }
+        peripheralManager?.apply {
+            openGattServer()
+            removeAllServices()
 
-                openGattServer()
-                removeAllServices()
-
-                heartRateService = HeartRateService(this).also {
-                    serviceImplementations[it.service] = it // More services in the example code
-                }
-                for (service in serviceImplementations.keys) {
-                    add(service)
-                }
+            heartRateService = HeartRateService(this).also {
+                serviceImplementations[it.service] = it // More services in the example code
             }
+            for (service in serviceImplementations.keys) {
+                add(service)
+            }
+        }
+    }
+    private var peripheralManager: BluetoothPeripheralManager?
+
+    init {
+        peripheralManager = bluetoothManager?.let {
+            BluetoothPeripheralManager(
+                context,
+                it,
+                peripheralManagerCallback
+            )
         }
     }
 
