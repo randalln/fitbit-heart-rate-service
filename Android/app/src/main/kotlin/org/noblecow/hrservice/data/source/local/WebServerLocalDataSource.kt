@@ -1,5 +1,7 @@
-package org.noblecow.hrservice.data
+package org.noblecow.hrservice.data.source.local
 
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.call
 import io.ktor.server.application.install
@@ -11,35 +13,61 @@ import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import javax.inject.Inject
+import javax.inject.Singleton
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import org.noblecow.hrservice.BuildConfig
-import org.noblecow.hrservice.ui.GeneralError
-import org.noblecow.hrservice.ui.PORT_LISTEN
-import org.noblecow.hrservice.ui.Request
+import org.noblecow.hrservice.data.util.PORT_LISTEN
 import org.slf4j.LoggerFactory
 
-internal class WebServer @Inject constructor() {
+internal data class WebServerState(
+    val error: Throwable? = null,
+    val isRunning: Boolean = false
+)
 
+@Serializable
+private data class Response(val status: String)
+
+private const val TAG = "WebServerLocalDataSource"
+
+@Singleton
+internal class WebServerLocalDataSource @Inject constructor() {
+
+    // SharedFlow, because heart rate can be unchanged
+    private val _bpmStream = MutableSharedFlow<Int>()
+    val bpmStream: SharedFlow<Int> = _bpmStream.asSharedFlow()
     private val _webServerState = MutableStateFlow(WebServerState())
     val webServerState = _webServerState.asStateFlow()
 
     private var currentRequest: Request? = null
     private var ktorServer: BaseApplicationEngine? = null
-    private val logger = LoggerFactory.getLogger(WebServer::class.simpleName)
+    private val logger = LoggerFactory.getLogger(TAG)
 
-    fun start(): Boolean {
-        return if (ktorServer == null) {
+    suspend fun start() {
+        if (ktorServer == null) {
             ktorServer = embeddedServer(Netty, PORT_LISTEN) {
                 install(StatusPages) {
-                    exception<Throwable> { _, e ->
-                        handleKtorError(e)
+                    exception<Throwable> { call, e ->
+                        val message = e.localizedMessage ?: e::class.java.simpleName
+                        call.respondText(
+                            message,
+                            ContentType.Text.Plain,
+                            HttpStatusCode.InternalServerError
+                        )
+                        logger.error(message, e)
+                        _webServerState.update {
+                            WebServerState(error = e, isRunning = true)
+                        }
                     }
                 }
                 install(ContentNegotiation) {
@@ -58,12 +86,10 @@ internal class WebServer @Inject constructor() {
                     }
 
                     post("/") {
-                        // throw IllegalStateException("foo") // testing
+                        // check(false) { "fake error " } // testing
                         call.receive<Request>().run {
                             currentRequest = this
-                            _webServerState.update {
-                                it.copy(bpm = this.bpm)
-                            }
+                            _bpmStream.emit(this.bpm)
                             call.respond(this)
                         }
                     }
@@ -71,27 +97,15 @@ internal class WebServer @Inject constructor() {
             }.start(wait = false)
 
             _webServerState.update {
-                WebServerState(running = true)
+                WebServerState(isRunning = true)
             }
-
-            true
-        } else {
-            false
-        }
-    }
-
-    private fun handleKtorError(e: Throwable) {
-        val message = e.localizedMessage ?: e::class.java.simpleName
-        logger.error(message, e)
-        _webServerState.update {
-            WebServerState(bpm = 0, error = GeneralError.Ktor(message), running = true)
         }
     }
 
     fun stop() {
         if (stopKtor()) {
             _webServerState.update {
-                WebServerState(bpm = 0, error = null, running = false)
+                WebServerState(error = null, isRunning = false)
             }
         }
     }
@@ -104,6 +118,3 @@ internal class WebServer @Inject constructor() {
         } ?: false
     }
 }
-
-@Serializable
-private data class Response(val status: String)

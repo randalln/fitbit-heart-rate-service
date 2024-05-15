@@ -15,35 +15,35 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.noblecow.hrservice.data.WebServer
-import org.noblecow.hrservice.data.WebServerState
-import org.noblecow.hrservice.ui.FAKE_BPM_START
-import org.noblecow.hrservice.ui.PORT_LISTEN
-import org.noblecow.hrservice.ui.Request
+import org.noblecow.hrservice.data.source.local.Request
+import org.noblecow.hrservice.data.source.local.WebServerLocalDataSource
+import org.noblecow.hrservice.data.source.local.WebServerState
+import org.noblecow.hrservice.data.util.FAKE_BPM_START
+import org.noblecow.hrservice.data.util.PORT_LISTEN
 
-class WebServerTest {
+class WebServerLocalDataSourceTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private lateinit var webServer: WebServer
+    private lateinit var webServerLocalDataSource: WebServerLocalDataSource
 
     @Before
     fun before() {
-        webServer = WebServer()
+        webServerLocalDataSource = WebServerLocalDataSource()
     }
 
     @After
     fun after() {
-        webServer.stop()
+        webServerLocalDataSource.stop()
     }
 
     @Test
     fun `When web server is started, a new state is emitted`() = runTest {
-        webServer.start()
+        webServerLocalDataSource.start()
 
-        webServer.webServerState.test {
+        webServerLocalDataSource.webServerState.test {
             Assert.assertEquals(
-                WebServerState(bpm = 0, error = null, running = true),
+                WebServerState(error = null, isRunning = true),
                 awaitItem()
             )
         }
@@ -51,13 +51,13 @@ class WebServerTest {
 
     @Test
     fun `When bpm is received, a new state is emitted`() = runTest {
-        webServer.start()
+        webServerLocalDataSource.start()
 
         sendBpm(FAKE_BPM_START)
 
-        webServer.webServerState.test {
+        webServerLocalDataSource.webServerState.test {
             Assert.assertEquals(
-                WebServerState(bpm = 60, error = null, running = true),
+                WebServerState(error = null, isRunning = true),
                 awaitItem()
             )
         }
@@ -65,20 +65,20 @@ class WebServerTest {
 
     @Test
     fun `When web server is stopped, a new state is emitted`() = runTest {
-        webServer.start()
-        webServer.webServerState.test {
+        webServerLocalDataSource.start()
+        webServerLocalDataSource.webServerState.test {
             Assert.assertEquals(
-                WebServerState(bpm = 0, error = null, running = true),
+                WebServerState(error = null, isRunning = true),
                 awaitItem()
             )
         }
         sendBpm(FAKE_BPM_START + 1)
 
-        webServer.stop()
+        webServerLocalDataSource.stop()
 
-        webServer.webServerState.test {
+        webServerLocalDataSource.webServerState.test {
             Assert.assertEquals(
-                WebServerState(bpm = 0, error = null, running = false),
+                WebServerState(error = null, isRunning = false),
                 awaitItem()
             )
         }

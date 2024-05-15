@@ -1,6 +1,6 @@
-package org.noblecow.hrservice.ui
+package org.noblecow.hrservice
 
-object NavRoutes {
+internal object NavRoutes {
     const val MAIN = "main"
     const val LIBRARIES = "libraries"
 }

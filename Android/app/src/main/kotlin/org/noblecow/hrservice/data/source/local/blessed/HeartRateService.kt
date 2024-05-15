@@ -1,4 +1,4 @@
-package org.noblecow.hrservice.data.blessed
+package org.noblecow.hrservice.data.source.local.blessed
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
