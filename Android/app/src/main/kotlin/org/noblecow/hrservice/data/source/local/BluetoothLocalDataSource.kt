@@ -1,4 +1,4 @@
-package org.noblecow.hrservice.data.blessed
+package org.noblecow.hrservice.data.source.local
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -21,31 +21,60 @@ import com.welie.blessed.GattStatus
 import com.welie.blessed.ReadResponse
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.noblecow.hrservice.data.AdvertisingState
-import org.noblecow.hrservice.data.HardwareState
+import org.noblecow.hrservice.data.di.DefaultDispatcher
+import org.noblecow.hrservice.data.source.local.blessed.HeartRateService
+import org.noblecow.hrservice.data.source.local.blessed.Service
 
 private const val TAG = "BluetoothLocalDataSource"
 
+internal interface BluetoothLocalDataSource {
+    val advertising: Flow<AdvertisingState>
+    val clientConnected: Flow<Boolean>
+    fun getHardwareState(): HardwareState
+    fun getMissingPermissions(): Array<String>
+    fun startAdvertising()
+    fun stop()
+    fun notifyHeartRate(bpm: Int): Unit?
+    fun permissionsGranted(): Boolean
+}
+
+internal sealed class AdvertisingState {
+    data object Started : AdvertisingState()
+    data object Stopped : AdvertisingState()
+    data class Failure(val error: AdvertiseError) : AdvertisingState()
+}
+
+internal enum class HardwareState {
+    DISABLED,
+    HARDWARE_UNSUITABLE,
+    READY
+}
+
+@Singleton
 @SuppressLint("MissingPermission")
-class BluetoothLocalDataSource @Inject constructor(
+internal class BluetoothLocalDataSourceImpl @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val bluetoothManager: BluetoothManager?,
-    dispatcher: CoroutineDispatcher = Dispatchers.Default
-) {
+    @DefaultDispatcher dispatcher: CoroutineDispatcher = Dispatchers.Default
+) : BluetoothLocalDataSource {
+
+    private val _advertising = MutableStateFlow<AdvertisingState>(AdvertisingState.Stopped)
+    override val advertising = _advertising.asStateFlow()
+    private val _clientConnected = MutableStateFlow(false)
+    override val clientConnected: Flow<Boolean> = _clientConnected.asStateFlow()
+
     private var isInitialized = false
-    private val _advertisingFlow = MutableSharedFlow<AdvertisingState>(replay = 1)
-    val advertisingFlow = _advertisingFlow.asSharedFlow()
-    private val _clientConnectionFlow = MutableStateFlow(false)
-    val clientConnectionFlow = _clientConnectionFlow.asStateFlow()
+    private val bluetoothManager: BluetoothManager? = context.getSystemService(
+        Context.BLUETOOTH_SERVICE
+    ) as? BluetoothManager
     private val localScope: CoroutineScope = CoroutineScope(Job() + dispatcher)
     private val serviceImplementations = HashMap<BluetoothGattService, Service>()
     private var heartRateService: HeartRateService? = null
@@ -129,7 +158,7 @@ class BluetoothLocalDataSource @Inject constructor(
                 val serviceImplementation = serviceImplementations[characteristic.service]
                 serviceImplementation?.onNotifyingEnabled(bluetoothCentral, characteristic)?.let {
                     if (it) {
-                        _clientConnectionFlow.value = true
+                        _clientConnected.value = true
                     }
                 }
             }
@@ -168,31 +197,42 @@ class BluetoothLocalDataSource @Inject constructor(
                     serviceImplementation.onCentralDisconnected(bluetoothCentral)
                 }
                 peripheralManager?.connectedCentrals?.isEmpty().run {
-                    _clientConnectionFlow.value = false
+                    _clientConnected.value = false
                 }
             }
 
             override fun onAdvertisingStarted(settingsInEffect: AdvertiseSettings) {
                 localScope.launch {
-                    _advertisingFlow.emit(AdvertisingState.Started)
+                    _advertising.emit(AdvertisingState.Started)
                 }
             }
 
             override fun onAdvertisingStopped() {
                 localScope.launch {
-                    _advertisingFlow.emit(AdvertisingState.Stopped)
+                    _advertising.emit(AdvertisingState.Stopped)
                 }
             }
 
             override fun onAdvertiseFailure(advertiseError: AdvertiseError) {
                 localScope.launch {
                     Log.e(TAG, "${advertiseError.name} ${advertiseError.value}")
-                    _advertisingFlow.emit(AdvertisingState.Failure(advertiseError))
+                    _advertising.emit(AdvertisingState.Failure(advertiseError))
                 }
             }
         }
+    private var peripheralManager: BluetoothPeripheralManager?
 
-    internal fun getHardwareState(): HardwareState {
+    init {
+        peripheralManager = bluetoothManager?.let {
+            BluetoothPeripheralManager(
+                context,
+                it,
+                peripheralManagerCallback
+            )
+        }
+    }
+
+    override fun getHardwareState(): HardwareState {
         return bluetoothManager?.let { manager ->
             val bluetoothAdapter = manager.adapter
             // We can't continue without proper Bluetooth support
@@ -231,6 +271,15 @@ class BluetoothLocalDataSource @Inject constructor(
         bluetoothManager?.apply {
             adapter.name = Build.MODEL
         }
+        if (peripheralManager == null) { // Nulled on stopping
+            peripheralManager = bluetoothManager?.let {
+                BluetoothPeripheralManager(
+                    context,
+                    it,
+                    peripheralManagerCallback
+                )
+            }
+        }
         peripheralManager?.apply {
             openGattServer()
             removeAllServices()
@@ -244,28 +293,17 @@ class BluetoothLocalDataSource @Inject constructor(
             isInitialized = true
         }
     }
-    private var peripheralManager: BluetoothPeripheralManager?
 
-    init {
-        peripheralManager = bluetoothManager?.let {
-            BluetoothPeripheralManager(
-                context,
-                it,
-                peripheralManagerCallback
-            )
-        }
-    }
-
-    fun stop() {
+    override fun stop() {
         if (isInitialized) {
             peripheralManager?.close()
         }
         peripheralManager = null
     }
 
-    fun permissionsGranted() = peripheralManager?.permissionsGranted()
+    override fun permissionsGranted() = peripheralManager?.permissionsGranted() ?: false
 
-    fun startAdvertising() {
+    override fun startAdvertising() {
         initialize()
         peripheralManager?.let {
             if (!it.isAdvertising) {
@@ -289,7 +327,8 @@ class BluetoothLocalDataSource @Inject constructor(
         }
     }
 
-    fun getMissingPermissions() = peripheralManager?.getMissingPermissions()
+    override fun getMissingPermissions(): Array<String> = peripheralManager?.getMissingPermissions()
+        ?: emptyArray()
 
-    fun notifyHeartRate(bpm: Int) = heartRateService?.notifyHeartRate(bpm)
+    override fun notifyHeartRate(bpm: Int) = heartRateService?.notifyHeartRate(bpm)
 }

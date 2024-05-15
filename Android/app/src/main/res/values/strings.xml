@@ -1,16 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Heart Rate Monitor</string>
-    <string name="awaiting_client">Awaiting client …</string>
+    <string name="awaiting_client">Awaiting client</string>
+    <string name="bpm">BPM: %s</string>
     <string name="bpm_init_val">0</string>
+    <string name="cancel">Cancel</string>
+    <string name="channel_1_description">Broadcasting</string>
+    <string name="channel_1_name">Persistent</string>
+    <string name="client_connected">Client connected</string>
     <string name="desc_heart_background">heart background</string>
     <string name="error_advertise">Bluetooth advertising error</string>
     <string name="error_hardware">Required bluetooth hardware not present</string>
-    <string name="error_ktor">Web server error: %s</string>
     <string name="error_unknown">Unknown error encountered</string>
+    <string name="error_web_server">Web server error: %s</string>
     <string name="exit">Exit</string>
     <string name="permissions_denied">Required permissions denied</string>
     <string name="start">Start</string>
+    <string name="stop">Stop</string>
     <string name="title_libraries">Libraries</string>
+    <string name="title_notification">Notification</string>
     <string name="toggle_fake_bpm">Fake BPM</string>
 </resources>

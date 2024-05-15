@@ -20,13 +20,13 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication)
-    alias(libs.plugins.jetbrainsKotlinAndroid)
+    alias(libs.plugins.kotlinAndroid)
     alias(libs.plugins.detekt)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.aboutLibs)
-    kotlin("plugin.serialization") version (libs.versions.kotlin)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 detekt {
@@ -45,8 +45,8 @@ android {
         applicationId = "org.noblecow.hrservice"
         minSdk = 28
         targetSdk = 34
-        versionCode = 7
-        versionName = "0.3.1"
+        versionCode = 8
+        versionName = "0.4.0"
     }
     buildFeatures {
         viewBinding = true
@@ -61,7 +61,11 @@ android {
         }
     }
     buildTypes {
-        release {
+        getByName("debug") {
+            applicationIdSuffix = ".debug"
+            isDebuggable = true
+        }
+        getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -99,11 +103,14 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.fragment.ktx)
     implementation(libs.hilt)
+    implementation(libs.hilt.work)
     ksp(libs.hilt.compiler)
+    ksp(libs.hilt.work.compiler)
     implementation(libs.material)
     implementation(libs.navigation.fragment.ktx)
     implementation(libs.navigation.ui.ktx)
     implementation(libs.navigation.dynamic.features.fragment)
+    implementation(libs.work.runtime.ktx)
 
     // Third-party libraries
     implementation(libs.aboutLibs)
@@ -121,7 +128,8 @@ dependencies {
     implementation(libs.slf4j.api)
 
     testImplementation(libs.junit)
-    testImplementation(libs.mockk)
+    testImplementation(libs.mockk.android)
+    testImplementation(libs.mockk.agent)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.logback.classic)
     testImplementation(libs.turbine)

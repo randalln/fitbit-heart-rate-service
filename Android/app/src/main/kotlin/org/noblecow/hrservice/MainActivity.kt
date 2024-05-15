@@ -1,7 +1,6 @@
-package org.noblecow.hrservice.ui
+package org.noblecow.hrservice
 
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.createGraph
@@ -13,11 +12,11 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.mikepenz.aboutlibraries.ui.LibsSupportFragment
 import dagger.hilt.android.AndroidEntryPoint
-import org.noblecow.hrservice.R
 import org.noblecow.hrservice.databinding.ActivityMainBinding
+import org.noblecow.hrservice.ui.MainFragment
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+internal class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var appBarConfiguration: AppBarConfiguration
 
@@ -50,9 +49,6 @@ class MainActivity : AppCompatActivity() {
         }
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
-
-        // Devices with a display should not go to sleep
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     override fun onSupportNavigateUp(): Boolean {
