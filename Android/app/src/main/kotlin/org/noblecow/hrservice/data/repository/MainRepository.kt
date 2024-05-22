@@ -30,12 +30,11 @@ internal data class AppState(
     val servicesState: ServicesState = ServicesState.Stopped
 )
 
-@Suppress("MagicNumber")
-internal sealed class ServicesState(val order: Int = -1) {
-    data object Starting : ServicesState(0), ServicesTransitionState
-    data object Started : ServicesState(1)
-    data object Stopping : ServicesState(2), ServicesTransitionState
-    data object Stopped : ServicesState(3)
+internal sealed class ServicesState {
+    data object Starting : ServicesState(), ServicesTransitionState
+    data object Started : ServicesState()
+    data object Stopping : ServicesState(), ServicesTransitionState
+    data object Stopped : ServicesState()
     data class Error(val id: Int) : ServicesState()
 }
 
@@ -47,13 +46,14 @@ internal interface MainRepository {
     fun getMissingPermissions(): Array<String>
     fun permissionsGranted(): Boolean
     suspend fun startServices()
-    suspend fun stopServices()
-    fun toggleFakeBpm()
+    fun stopServices()
+    fun toggleFakeBpm(): Boolean
 }
 
 private const val TAG = "MainRepositoryImpl"
 
 @Singleton
+@Suppress("TooManyFunctions")
 internal class MainRepositoryImpl @Inject constructor(
     private val bluetoothLocalDataSource: BluetoothLocalDataSource,
     private val webServerLocalDataSource: WebServerLocalDataSource,
@@ -64,13 +64,12 @@ internal class MainRepositoryImpl @Inject constructor(
     private var fakeBpmJob: Job? = null
     private val localScope: CoroutineScope = CoroutineScope(Job() + dispatcher)
     private val logger = LoggerFactory.getLogger(TAG)
-    private var startingOrStopping: ServicesTransitionState? = null
-    private val startOrStopFlow = MutableSharedFlow<Boolean>()
+    private val toggleSignalFlow = MutableSharedFlow<Boolean>()
     private var previousServicesState: ServicesState? = null
 
     private val servicesState: StateFlow<ServicesState> = combine(
-        startOrStopFlow,
-        bluetoothLocalDataSource.advertising,
+        toggleSignalFlow,
+        bluetoothLocalDataSource.advertisingState,
         webServerLocalDataSource.webServerState
     ) { _, advertisingState, webServerState ->
         val newState = getErrorState(advertisingState, webServerState)
@@ -114,33 +113,34 @@ internal class MainRepositoryImpl @Inject constructor(
         advertisingState: AdvertisingState,
         webServerState: WebServerState
     ): ServicesState {
-        val partiallyStarted =
-            advertisingState == AdvertisingState.Started && !webServerState.isRunning ||
-                advertisingState == AdvertisingState.Stopped && webServerState.isRunning
+        val newState = if (advertisingState == AdvertisingState.Stopped &&
+            !webServerState.isRunning
+        ) {
+            ServicesState.Stopped
+        } else if (advertisingState == AdvertisingState.Started && webServerState.isRunning) {
+            ServicesState.Started
+        } else {
+            previousServicesState?.let {
+                when (it) {
+                    ServicesState.Started -> ServicesState.Stopping
+                    ServicesState.Stopped -> ServicesState.Starting
+                    else -> null
+                }
+            } ?: ServicesState.Starting
+        }
 
-        // Don't change state until both services have started
-        return previousServicesState.takeIf {
-            it != null && partiallyStarted && it is ServicesTransitionState
-        } ?: run {
-            if (advertisingState == AdvertisingState.Started && webServerState.isRunning) {
-                startingOrStopping?.let {
-                    val tmp = startingOrStopping
-                    startingOrStopping = null
-                    tmp as ServicesState
-                } ?: ServicesState.Started
-            } else {
-                startingOrStopping?.let {
-                    val tmp = startingOrStopping
-                    startingOrStopping = null
-                    tmp as ServicesState
-                } ?: ServicesState.Stopped
+        if (newState == ServicesState.Stopping) {
+            localScope.launch {
+                stopAllServices()
             }
         }
+
+        return newState
     }
 
     override fun getAppStateStream(): StateFlow<AppState> = combine(
         servicesState,
-        bluetoothLocalDataSource.clientConnected,
+        bluetoothLocalDataSource.clientConnectedState,
         bpm
     ) { servicesState, isClientConnected, bpm ->
         val newState = AppState(
@@ -165,9 +165,7 @@ internal class MainRepositoryImpl @Inject constructor(
     override suspend fun startServices() {
         try {
             check(servicesState.value == ServicesState.Stopped) { servicesState.value }
-
-            startingOrStopping = ServicesState.Starting
-            startOrStopFlow.emit(true)
+            toggleSignalFlow.emit(true)
             bluetoothLocalDataSource.startAdvertising()
             webServerLocalDataSource.start()
         } catch (e: IllegalStateException) {
@@ -175,35 +173,44 @@ internal class MainRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun stopServices() {
+    override fun stopServices() {
         try {
             check(servicesState.value == ServicesState.Started) { servicesState.value }
-
-            startingOrStopping = ServicesState.Stopping
-            startOrStopFlow.emit(true)
-            fakeBpmJob?.cancel()
-            bluetoothLocalDataSource.stop()
-            webServerLocalDataSource.stop()
+            stopAllServices()
         } catch (e: IllegalStateException) {
             logger.error(e.localizedMessage, e)
         }
     }
 
+    private fun stopAllServices() {
+        fakeBpmJob?.cancel()
+        bluetoothLocalDataSource.stop()
+        webServerLocalDataSource.stop()
+    }
+
+    override fun toggleFakeBpm() = startFakeBpm() || stopFakeBpm()
+
     @Suppress("TooGenericExceptionCaught")
-    override fun toggleFakeBpm() {
-        fakeBpmJob?.let {
-            it.cancel()
-            fakeBpmJob = null
-        } ?: run {
-            if (servicesState.value == ServicesState.Started) {
-                fakeBpmJob = localScope.launch {
-                    try {
-                        fakeBpmLocalDataSource.run()
-                    } catch (error: Throwable) {
-                        logger.error(error.localizedMessage, error)
-                    }
+    private fun startFakeBpm(): Boolean {
+        return if (fakeBpmJob == null && servicesState.value == ServicesState.Started) {
+            fakeBpmJob = localScope.launch {
+                try {
+                    fakeBpmLocalDataSource.run()
+                } catch (error: Throwable) {
+                    logger.error(error.localizedMessage, error)
                 }
             }
+            true
+        } else {
+            false
         }
+    }
+
+    private fun stopFakeBpm(): Boolean {
+        return fakeBpmJob?.let {
+            it.cancel()
+            fakeBpmJob = null
+            true
+        } ?: false
     }
 }

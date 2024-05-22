@@ -39,8 +39,8 @@ class MainRepositoryTest {
         MutableStateFlow(WebServerState())
 
     private val bluetoothLocalDataSource: BluetoothLocalDataSource = mockk(relaxed = true) {
-        every { advertising } returns mockAdvertisingFlow
-        every { clientConnected } returns mockClientConnectionFlow
+        every { advertisingState } returns mockAdvertisingFlow
+        every { clientConnectedState } returns mockClientConnectionFlow
     }
     private val webServerLocalDataSource: WebServerLocalDataSource = mockk(relaxed = true) {
         every { webServerState } returns mockWebServerState
@@ -68,9 +68,45 @@ class MainRepositoryTest {
             mockWebServerState.value = WebServerState(isRunning = true)
             assertEquals(AppState(servicesState = ServicesState.Started), awaitItem())
             mainRepository.stopServices()
+            verify { bluetoothLocalDataSource.stop() }
+            verify { webServerLocalDataSource.stop() }
+            mockAdvertisingFlow.value = AdvertisingState.Stopped
+            assertEquals(AppState(servicesState = ServicesState.Stopping), awaitItem())
+            mockWebServerState.value = WebServerState(isRunning = false)
+            assertEquals(AppState(servicesState = ServicesState.Stopped), awaitItem())
+        }
+    }
+
+    @Test
+    fun `All services stop when Bluetooth stops advertising`() = runTest {
+        mainRepository.getAppStateStream().test {
+            assertEquals(AppState(servicesState = ServicesState.Stopped), awaitItem())
+            mainRepository.startServices()
+            mockAdvertisingFlow.value = AdvertisingState.Started
+            assertEquals(AppState(servicesState = ServicesState.Starting), awaitItem())
+            mockWebServerState.value = WebServerState(isRunning = true)
+            assertEquals(AppState(servicesState = ServicesState.Started), awaitItem())
+            mockAdvertisingFlow.value = AdvertisingState.Stopped
+            verify { webServerLocalDataSource.stop() }
+            assertEquals(AppState(servicesState = ServicesState.Stopping), awaitItem())
+            mockWebServerState.value = WebServerState(isRunning = false)
+            assertEquals(AppState(servicesState = ServicesState.Stopped), awaitItem())
+        }
+    }
+
+    @Test
+    fun `All services stop when the web server stops`() = runTest {
+        mainRepository.getAppStateStream().test {
+            assertEquals(AppState(servicesState = ServicesState.Stopped), awaitItem())
+            mainRepository.startServices()
+            mockAdvertisingFlow.value = AdvertisingState.Started
+            assertEquals(AppState(servicesState = ServicesState.Starting), awaitItem())
+            mockWebServerState.value = WebServerState(isRunning = true)
+            assertEquals(AppState(servicesState = ServicesState.Started), awaitItem())
+            mockWebServerState.value = WebServerState(isRunning = false)
+            verify { bluetoothLocalDataSource.stop() }
             assertEquals(AppState(servicesState = ServicesState.Stopping), awaitItem())
             mockAdvertisingFlow.value = AdvertisingState.Stopped
-            mockWebServerState.value = WebServerState(isRunning = false)
             assertEquals(AppState(servicesState = ServicesState.Stopped), awaitItem())
         }
     }
@@ -78,7 +114,7 @@ class MainRepositoryTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `BPM with the same value are sent over BLE`() = runTest {
-        val foo = launch {
+        val job = launch {
             mainRepository.getAppStateStream().collect {
                 println("extra subscriber: $it")
             }
@@ -102,6 +138,6 @@ class MainRepositoryTest {
         }
 
         advanceUntilIdle()
-        foo.cancel()
+        job.cancel()
     }
 }
