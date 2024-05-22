@@ -37,8 +37,8 @@ import org.noblecow.hrservice.data.source.local.blessed.Service
 private const val TAG = "BluetoothLocalDataSource"
 
 internal interface BluetoothLocalDataSource {
-    val advertising: Flow<AdvertisingState>
-    val clientConnected: Flow<Boolean>
+    val advertisingState: Flow<AdvertisingState>
+    val clientConnectedState: Flow<Boolean>
     fun getHardwareState(): HardwareState
     fun getMissingPermissions(): Array<String>
     fun startAdvertising()
@@ -66,10 +66,10 @@ internal class BluetoothLocalDataSourceImpl @Inject constructor(
     @DefaultDispatcher dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : BluetoothLocalDataSource {
 
-    private val _advertising = MutableStateFlow<AdvertisingState>(AdvertisingState.Stopped)
-    override val advertising = _advertising.asStateFlow()
-    private val _clientConnected = MutableStateFlow(false)
-    override val clientConnected: Flow<Boolean> = _clientConnected.asStateFlow()
+    private val _advertisingState = MutableStateFlow<AdvertisingState>(AdvertisingState.Stopped)
+    override val advertisingState = _advertisingState.asStateFlow()
+    private val _clientConnectedState = MutableStateFlow(false)
+    override val clientConnectedState = _clientConnectedState.asStateFlow()
 
     private var isInitialized = false
     private val bluetoothManager: BluetoothManager? = context.getSystemService(
@@ -158,7 +158,7 @@ internal class BluetoothLocalDataSourceImpl @Inject constructor(
                 val serviceImplementation = serviceImplementations[characteristic.service]
                 serviceImplementation?.onNotifyingEnabled(bluetoothCentral, characteristic)?.let {
                     if (it) {
-                        _clientConnected.value = true
+                        _clientConnectedState.value = true
                     }
                 }
             }
@@ -197,26 +197,26 @@ internal class BluetoothLocalDataSourceImpl @Inject constructor(
                     serviceImplementation.onCentralDisconnected(bluetoothCentral)
                 }
                 peripheralManager?.connectedCentrals?.isEmpty().run {
-                    _clientConnected.value = false
+                    _clientConnectedState.value = false
                 }
             }
 
             override fun onAdvertisingStarted(settingsInEffect: AdvertiseSettings) {
                 localScope.launch {
-                    _advertising.emit(AdvertisingState.Started)
+                    _advertisingState.emit(AdvertisingState.Started)
                 }
             }
 
             override fun onAdvertisingStopped() {
                 localScope.launch {
-                    _advertising.emit(AdvertisingState.Stopped)
+                    _advertisingState.emit(AdvertisingState.Stopped)
                 }
             }
 
             override fun onAdvertiseFailure(advertiseError: AdvertiseError) {
                 localScope.launch {
                     Log.e(TAG, "${advertiseError.name} ${advertiseError.value}")
-                    _advertising.emit(AdvertisingState.Failure(advertiseError))
+                    _advertisingState.emit(AdvertisingState.Failure(advertiseError))
                 }
             }
         }

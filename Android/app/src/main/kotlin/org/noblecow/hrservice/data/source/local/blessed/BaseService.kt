@@ -19,11 +19,9 @@ internal open class BaseService(
     override val service: BluetoothGattService,
     override val serviceName: String
 ) : Service {
-    private val peripheralManager: BluetoothPeripheralManager
-
-    init {
-        this.peripheralManager = Objects.requireNonNull(peripheralManager)
-    }
+    private val peripheralManager: BluetoothPeripheralManager = Objects.requireNonNull(
+        peripheralManager
+    )
 
     val cccDescriptor: BluetoothGattDescriptor
         get() = BluetoothGattDescriptor(

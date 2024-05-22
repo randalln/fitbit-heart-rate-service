@@ -6,7 +6,7 @@
         android:id="@+id/action_libraries"
         android:icon="@drawable/baseline_cruelty_free_24"
         android:title="@string/title_libraries"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_fake_bpm"
