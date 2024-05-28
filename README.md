@@ -9,7 +9,7 @@ This lets you share real time heart rate data from the Fitbit watch with exercis
 working on OS 4 devices too! (Versa 2, Versa Lite, Versa, Ionic)
 
 ### You can help
-Just join the Google Group to get the app! https://groups.google.com/g/virtual-heart-rate-monitor-alpha  
+Just join the [Google Group](https://groups.google.com/g/virtual-heart-rate-monitor-alpha) to get the app!  
 *Google requires 20 users to have the app installed for 14 days before it can be released into production.
 
 ![Apps](./apps.jpg)
