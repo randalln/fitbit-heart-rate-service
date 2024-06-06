@@ -19,14 +19,15 @@ import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
-    alias(libs.plugins.androidApplication)
-    alias(libs.plugins.kotlinAndroid)
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.detekt)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.aboutLibs)
-    alias(libs.plugins.kotlinSerialization)
 }
 
 detekt {
@@ -99,7 +100,10 @@ android {
 
 dependencies {
     implementation(libs.activity)
+    implementation(libs.activity.compose)
     implementation(libs.activity.ktx)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.material3)
     implementation(libs.constraintlayout)
     implementation(libs.fragment.ktx)
     implementation(libs.hilt)

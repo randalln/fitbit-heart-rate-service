@@ -136,6 +136,9 @@ fabric.properties
 # End of https://www.toptal.com/developers/gitignore/api/androidstudio
 
 .idea/deploymentTargetDropDown.xml
+.idea/deploymentTargetSelector.xml
+.idea/ktlint-plugin.xml
 .idea/migrations.xml
 .DS_Store
 keystore.properties
+lint-rules

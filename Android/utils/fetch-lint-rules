@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# If you use the detekt and/or ktlint IDE plugins, you can run this from a git hook;
+# e.g. .git/hooks/post-checkout
+
+COMPOSE_RULES="$(grep -E 'compose-rules-detekt = "[0-9]' gradle/libs.versions.toml | cut -f 2 -d \")"
+OUTPUT_DIR="lint-rules"
+JARS="detekt ktlint"
+
+mkdir -p ${OUTPUT_DIR}
+echo "Fetching Compose lint rules as needed ..."
+
+for JAR in ${JARS}; do
+    if [ ! -f ${OUTPUT_DIR}/${JAR}-compose-${COMPOSE_RULES}-all.jar ]; then
+	echo
+	curl -L -OJ --output-dir ${OUTPUT_DIR} https://github.com/mrmans0n/compose-rules/releases/download/v${COMPOSE_RULES}/${JAR}-compose-${COMPOSE_RULES}-all.jar
+    fi
+done
+
+echo
+ls ${OUTPUT_DIR}
+
+
