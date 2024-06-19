@@ -8,16 +8,12 @@ OUTPUT_DIR="lint-rules"
 JARS="detekt ktlint"
 
 mkdir -p ${OUTPUT_DIR}
-echo "Fetching Compose lint rules as needed ..."
 
 for JAR in ${JARS}; do
     if [ ! -f ${OUTPUT_DIR}/${JAR}-compose-${COMPOSE_RULES}-all.jar ]; then
-	echo
+	echo "Fetching ${JAR}-compose-${COMPOSE_RULES}-all.jar ..."
 	curl -L -OJ --output-dir ${OUTPUT_DIR} https://github.com/mrmans0n/compose-rules/releases/download/v${COMPOSE_RULES}/${JAR}-compose-${COMPOSE_RULES}-all.jar
     fi
 done
-
-echo
-ls ${OUTPUT_DIR}
 
 

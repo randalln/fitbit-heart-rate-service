@@ -32,6 +32,7 @@ plugins {
 
 detekt {
     buildUponDefaultConfig = true
+    config.setFrom("$rootDir/config/detekt/config.yml")
 }
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -52,6 +53,7 @@ android {
     buildFeatures {
         viewBinding = true
         buildConfig = true
+        compose = true
     }
     signingConfigs {
         create("release") {
@@ -103,14 +105,17 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(libs.activity.ktx)
     implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.constraintlayout)
     implementation(libs.fragment.ktx)
     implementation(libs.hilt)
     implementation(libs.hilt.work)
+    debugImplementation(libs.androidx.ui.tooling)
     ksp(libs.hilt.compiler)
     ksp(libs.hilt.work.compiler)
     implementation(libs.material)
+    implementation(libs.navigation.compose)
     implementation(libs.navigation.fragment.ktx)
     implementation(libs.navigation.ui.ktx)
     implementation(libs.navigation.dynamic.features.fragment)
@@ -118,6 +123,7 @@ dependencies {
 
     // Third-party libraries
     implementation(libs.aboutLibs)
+    implementation(libs.aboutlibraries.compose.m3)
     // implementation(libs.blessed.kotlin)
     implementation(project(":blessed"))
     implementation(libs.timber)
