@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DetektPluginSettings">
+    <option name="configurationFiles">
+      <list>
+        <option value="$PROJECT_DIR$/config/detekt/config.yml" />
+      </list>
+    </option>
     <option name="enableDetekt" value="true" />
     <option name="enableForProjectResult" value="Accepted" />
+    <option name="pluginJars">
+      <list>
+        <option value="$PROJECT_DIR$/lint-rules/detekt-compose-0.4.4-all.jar" />
+      </list>
+    </option>
   </component>
 </project>
