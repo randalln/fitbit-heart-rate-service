@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory
 
 internal data class MainUiState(
     val bpm: Int = DEFAULT_BPM,
-    val isBluetoothEnabled: Boolean = true,
+    val bluetoothRequested: Boolean? = null,
     val isClientConnected: Boolean = false,
     val permissionsRequested: List<String>? = null,
     val servicesState: ServicesState = ServicesState.Stopped,
@@ -41,7 +41,7 @@ internal class MainViewModel @Inject constructor(
     val mainUiState: StateFlow<MainUiState>
 
     private val permissionsRequested: MutableStateFlow<List<String>?>
-    private val bluetoothEnabled: MutableStateFlow<Boolean>
+    private val enableBluetooth: MutableStateFlow<Boolean?>
     private val startAndroidServiceFlow: MutableStateFlow<Boolean>
     private val userMessage: MutableStateFlow<Int?>
 
@@ -51,21 +51,21 @@ internal class MainViewModel @Inject constructor(
         // Use model defaults as SSOT
         MainUiState().also {
             permissionsRequested = MutableStateFlow(it.permissionsRequested)
-            bluetoothEnabled = MutableStateFlow(it.isBluetoothEnabled)
+            enableBluetooth = MutableStateFlow(it.bluetoothRequested)
             startAndroidServiceFlow = MutableStateFlow(it.startAndroidService)
             userMessage = MutableStateFlow(it.userMessage)
         }
 
         mainUiState = combine(
             permissionsRequested,
-            bluetoothEnabled,
+            enableBluetooth,
             userMessage,
             mainRepository.getAppStateStream(),
             startAndroidServiceFlow
         ) { permissionsRequested, bluetoothEnabled, userMessage, appState, startAndroidService ->
             MainUiState(
                 bpm = appState.bpm,
-                isBluetoothEnabled = bluetoothEnabled,
+                bluetoothRequested = bluetoothEnabled,
                 isClientConnected = appState.isClientConnected,
                 permissionsRequested = permissionsRequested,
                 servicesState = appState.servicesState,
@@ -81,6 +81,9 @@ internal class MainViewModel @Inject constructor(
     }
 
     fun start() {
+        if (enableBluetooth.value == false) {
+            enableBluetooth.update { null }
+        }
         confirmPermissions()
     }
 
@@ -109,20 +112,25 @@ internal class MainViewModel @Inject constructor(
 
     private fun confirmBluetoothState() {
         if (permissionsRequested.value != null) {
-            permissionsRequested.update { null }
+            permissionsRequested.update { null } // reset
         }
-        if (!bluetoothEnabled.value) {
-            bluetoothEnabled.update { false }
+        /*
+        if (!bluetoothRequested.value) {
+            bluetoothRequested.update { false }
         }
-        val bleState = mainRepository.getHardwareState()
-        if (bleState == HardwareState.HARDWARE_UNSUITABLE) {
-            userMessage.update { R.string.error_hardware }
-        } else {
-            if (bleState == HardwareState.READY) {
-                logger.debug("Bluetooth is enabled...starting Android service")
-                startAndroidServiceFlow.update { true }
+         */
+        if (enableBluetooth.value != false) { // User declined to enable BT
+            val bleState = mainRepository.getHardwareState()
+            if (bleState == HardwareState.HARDWARE_UNSUITABLE) {
+                userMessage.update { R.string.error_hardware }
             } else {
-                bluetoothEnabled.update { false }
+                if (bleState == HardwareState.READY) {
+                    logger.debug("Bluetooth is enabled...starting Android service")
+                    enableBluetooth.update { null }
+                    startAndroidServiceFlow.update { true }
+                } else {
+                    enableBluetooth.update { true }
+                }
             }
         }
     }
@@ -131,7 +139,7 @@ internal class MainViewModel @Inject constructor(
 
     fun toggleFakeBPM() = mainRepository.toggleFakeBpm()
 
-    fun userDeclinedBluetoothEnable() = bluetoothEnabled.update { true }
+    fun userDeclinedBluetoothEnable() = enableBluetooth.update { false }
 
     fun userMessageShown() = userMessage.update { null }
 }

@@ -1,61 +1,44 @@
 package org.noblecow.hrservice
 
 import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.createGraph
-import androidx.navigation.findNavController
-import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.fragment.fragment
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupActionBarWithNavController
-import com.mikepenz.aboutlibraries.ui.LibsSupportFragment
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import dagger.hilt.android.AndroidEntryPoint
-import org.noblecow.hrservice.databinding.ActivityMainBinding
-import org.noblecow.hrservice.ui.MainFragment
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import org.noblecow.hrservice.ui.theme.HeartRateTheme
 
 @AndroidEntryPoint
-internal class MainActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var appBarConfiguration: AppBarConfiguration
+internal class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        val workRequest = OneTimeWorkRequestBuilder<MainWorker>().build()
+        val workManager = WorkManager.getInstance(this)
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        val localScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val workState = workManager.getWorkInfosForUniqueWorkFlow(WORKER_NAME)
+            .stateIn(
+                scope = localScope,
+                started = SharingStarted.WhileSubscribed(),
+                initialValue = null
+            )
 
-        setSupportActionBar(binding.topAppBar)
-
-        val navHostFragment = supportFragmentManager.findFragmentById(
-            binding.navHostFragment.id
-        ) as NavHostFragment
-        val navController = navHostFragment.navController.apply {
-            addOnDestinationChangedListener { _, destination, _ ->
-                binding.topAppBar.isTitleCentered = destination.route == graph.startDestinationRoute
+        enableEdgeToEdge()
+        setContent {
+            HeartRateTheme {
+                HeartRateApp(
+                    workRequest = workRequest,
+                    workState = workState,
+                    workManager = workManager
+                )
             }
         }
-        navController.graph = navController.createGraph(
-            startDestination = "main"
-        ) {
-            fragment<MainFragment>(NavRoutes.MAIN) {
-                label = resources.getString(R.string.app_name)
-            }
-            fragment<LibsSupportFragment>(NavRoutes.LIBRARIES) {
-                label = resources.getString(R.string.title_libraries)
-            }
-        }
-        appBarConfiguration = AppBarConfiguration(navController.graph)
-        setupActionBarWithNavController(navController, appBarConfiguration)
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        val navController = findNavController(binding.navHostFragment.id)
-
-        return navController.navigateUp(
-            appBarConfiguration
-        ) || super.onSupportNavigateUp()
     }
 }

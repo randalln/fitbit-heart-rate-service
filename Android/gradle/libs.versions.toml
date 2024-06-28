@@ -3,13 +3,12 @@ aboutLibs = "11.2.1"
 activity = "1.9.0"
 activity-compose = "1.9.0"
 agp = "8.5.0"
-blessedKotlin = "3.0.7"
+# blessedKotlin = "3.0.7"
 compose-bom = "2024.06.00"
 compose-rules-detekt = "0.4.4"
-constraintlayout = "2.1.4"
-detekt = "1.23.3"
-fragment = "1.8.0"
+detekt = "1.23.6"
 hilt = "2.51"
+hiltNavigationCompose = "1.2.0"
 hiltWork = "1.2.0"
 junit = "4.13.2"
 ktlint = "12.1.0"
@@ -31,19 +30,16 @@ uiTooling = "1.6.8"
 
 [libraries]
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibs" }
-aboutLibs = { module = "com.mikepenz:aboutlibraries", version.ref = "aboutLibs" }
-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity-compose" }
 activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activity" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
-blessed-kotlin = { module = "com.github.weliem:blessed-kotlin", version.ref = "blessedKotlin" }
+# blessed-kotlin = { module = "com.github.weliem:blessed-kotlin", version.ref = "blessedKotlin" }
 compose-rules-detekt = { module = "io.nlopez.compose.rules:detekt", version.ref = "compose-rules-detekt" }
-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragment" }
 hilt = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
 hilt-work-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltWork" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -63,8 +59,6 @@ material = { module = "com.google.android.material:material", version.ref = "mat
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 mockk-agent = { module = "io.mockk:mockk-agent", version.ref = "mockk" }
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationComposeVersion" }
-navigation-dynamic-features-fragment = { module = "androidx.navigation:navigation-dynamic-features-fragment", version.ref = "navigation" }
-navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigation" }
 navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigation" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4jApi" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
