@@ -22,6 +22,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -34,6 +36,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -51,6 +54,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.ui.HomeScreen
 import org.noblecow.hrservice.ui.MainViewModel
@@ -245,6 +249,10 @@ internal fun HeartRateApp(
         }
     }
 
+    val userMessage = uiState.userMessage?.let {
+        stringResource(id = it)
+    }
+
     // Get current back stack entry
     val backStackEntry by navController.currentBackStackEntryAsState()
     // Get the name of the current screen
@@ -258,6 +266,8 @@ internal fun HeartRateApp(
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
             rememberTopAppBarState()
         )
+        val scope = rememberCoroutineScope()
+        val snackbarHostState = remember { SnackbarHostState() }
         Scaffold(
             modifier = Modifier
                 .fillMaxSize()
@@ -270,6 +280,9 @@ internal fun HeartRateApp(
                     navController = navController,
                     onFakeBpmClick = { viewModel.toggleFakeBPM() }
                 )
+            },
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState)
             }
         ) { innerPadding ->
             NavHost(
@@ -292,6 +305,12 @@ internal fun HeartRateApp(
                 }
                 composable(route = HeartRateScreen.OpenSource.name) {
                     LibrariesContainer()
+                }
+                userMessage?.let {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(message = userMessage)
+                        viewModel.userMessageShown()
+                    }
                 }
             }
         }
