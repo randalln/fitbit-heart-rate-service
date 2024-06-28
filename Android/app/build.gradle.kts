@@ -101,28 +101,23 @@ android {
 }
 
 dependencies {
-    implementation(libs.activity)
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.activity.compose)
     implementation(libs.activity.ktx)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.constraintlayout)
-    implementation(libs.fragment.ktx)
-    implementation(libs.hilt)
-    implementation(libs.hilt.work)
     debugImplementation(libs.androidx.ui.tooling)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.hilt)
+    implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.work)
     ksp(libs.hilt.compiler)
     ksp(libs.hilt.work.compiler)
     implementation(libs.material)
     implementation(libs.navigation.compose)
-    implementation(libs.navigation.fragment.ktx)
     implementation(libs.navigation.ui.ktx)
-    implementation(libs.navigation.dynamic.features.fragment)
     implementation(libs.work.runtime.ktx)
 
     // Third-party libraries
-    implementation(libs.aboutLibs)
     implementation(libs.aboutlibraries.compose.m3)
     // implementation(libs.blessed.kotlin)
     implementation(project(":blessed"))
@@ -138,6 +133,7 @@ dependencies {
     implementation(libs.ktor.server.status.pages)
     implementation(libs.logback.android)
     implementation(libs.slf4j.api)
+    detektPlugins(libs.compose.rules.detekt)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk.android)

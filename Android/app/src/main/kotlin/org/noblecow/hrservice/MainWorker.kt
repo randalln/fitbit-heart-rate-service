@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory
 private const val CHANNEL_ID = "channel_id_1"
 private const val NOTIFICATION_ID = 0
 private const val TAG = "MainWorker"
+internal const val WORKER_NAME = "mainWorker"
 
 @HiltWorker
 internal class MainWorker @AssistedInject constructor(

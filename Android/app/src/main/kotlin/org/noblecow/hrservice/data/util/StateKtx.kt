@@ -11,9 +11,9 @@ internal fun MainUiState.printDiff(tag: String, otherState: MainUiState) {
         if (this@printDiff.bpm != otherState.bpm) {
             append("bpm: ${this@printDiff.bpm} -> ${otherState.bpm}")
         }
-        if (this@printDiff.isBluetoothEnabled != otherState.isBluetoothEnabled) {
-            append("isBluetoothEnabled: ${this@printDiff.isBluetoothEnabled} -> ")
-            append("${otherState.isBluetoothEnabled}\n")
+        if (this@printDiff.bluetoothRequested != otherState.bluetoothRequested) {
+            append("isBluetoothEnabled: ${this@printDiff.bluetoothRequested} -> ")
+            append("${otherState.bluetoothRequested}\n")
         }
         if (this@printDiff.isClientConnected != otherState.isClientConnected) {
             append("isClientConnected: ${this@printDiff.isClientConnected} -> ")

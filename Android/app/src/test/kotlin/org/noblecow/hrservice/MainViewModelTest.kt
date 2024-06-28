@@ -48,7 +48,7 @@ class MainViewModelTest {
         viewModel.mainUiState.test {
             assertEquals(MainUiState(), awaitItem())
             viewModel.start()
-            assertEquals(MainUiState(isBluetoothEnabled = false), awaitItem())
+            assertEquals(MainUiState(bluetoothRequested = true), awaitItem())
             viewModel.start()
         }
     }
