@@ -47,8 +47,8 @@ android {
         applicationId = "org.noblecow.hrservice"
         minSdk = 28
         targetSdk = 34
-        versionCode = 8
-        versionName = "0.4.0"
+        versionCode = 9
+        versionName = "0.5.0"
     }
     buildFeatures {
         viewBinding = true
