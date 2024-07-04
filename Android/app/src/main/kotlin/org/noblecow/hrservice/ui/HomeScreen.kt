@@ -1,5 +1,6 @@
 package org.noblecow.hrservice.ui
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,9 +12,12 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -28,13 +32,16 @@ internal fun HomeScreen(
     onStartClick: () -> Unit,
     showAwaitingClient: Boolean,
     bpm: Int,
+    animationEnd: Boolean,
     showStart: Boolean,
     modifier: Modifier = Modifier
 ) {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.fillMaxSize().padding(8.dp)
+        modifier = modifier
+            .fillMaxSize()
+            .padding(8.dp)
     ) {
         Text(
             text = stringResource(R.string.awaiting_client),
@@ -47,9 +54,16 @@ internal fun HomeScreen(
             modifier = Modifier.size(300.dp),
             contentAlignment = Alignment.Center
         ) {
+            val heartScale by animateFloatAsState(
+                targetValue = if (animationEnd) 0.95f else 1.0f,
+                label = "heartAnimation"
+            )
+
             Image(
                 painter = painterResource(id = R.drawable.ic_heart),
-                modifier = Modifier.matchParentSize(),
+                modifier = Modifier
+                    .matchParentSize()
+                    .scale(heartScale),
                 contentDescription = null
             )
             Text(
@@ -72,6 +86,12 @@ internal fun HomeScreen(
 @Composable
 private fun HomeScreenPreview() {
     HeartRateTheme {
-        HomeScreen(onStartClick = {}, showStart = true, showAwaitingClient = true, bpm = 128)
+        HomeScreen(
+            onStartClick = { },
+            showStart = true,
+            showAwaitingClient = true,
+            bpm = 128,
+            animationEnd = true
+        )
     }
 }

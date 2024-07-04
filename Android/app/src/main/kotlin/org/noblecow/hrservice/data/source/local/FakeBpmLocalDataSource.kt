@@ -19,6 +19,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.noblecow.hrservice.data.di.IoDispatcher
 import org.noblecow.hrservice.data.util.FAKE_BPM_END
+import org.noblecow.hrservice.data.util.FAKE_BPM_INTERVAL
 import org.noblecow.hrservice.data.util.FAKE_BPM_START
 import org.noblecow.hrservice.data.util.PORT_LISTEN
 
@@ -56,7 +57,7 @@ internal class FakeBpmLocalDataSource @Inject constructor(
                 bpm = FAKE_BPM_START
             }
             emit(bpm++)
-            delay(Duration.ofSeconds(1))
+            delay(Duration.ofSeconds(FAKE_BPM_INTERVAL))
         }
     }
 }
