@@ -34,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -53,9 +54,13 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.noblecow.hrservice.data.repository.ServicesState
+import org.noblecow.hrservice.data.util.ANIMATION_MILLIS
+import org.noblecow.hrservice.data.util.DEFAULT_BPM
 import org.noblecow.hrservice.ui.HomeScreen
 import org.noblecow.hrservice.ui.MainViewModel
 import org.slf4j.LoggerFactory
@@ -191,7 +196,7 @@ internal fun HomeAppBar(
 }
 
 @Composable
-@Suppress("LongMethod")
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 internal fun HeartRateApp(
     workRequest: OneTimeWorkRequest,
     workState: StateFlow<MutableList<WorkInfo>?>,
@@ -268,6 +273,9 @@ internal fun HeartRateApp(
         )
         val scope = rememberCoroutineScope()
         val snackbarHostState = remember { SnackbarHostState() }
+        var animationEnd by remember { mutableStateOf(false) }
+        var localBpmCount by remember { mutableIntStateOf(uiState.bpmCount) }
+
         Scaffold(
             modifier = Modifier
                 .fillMaxSize()
@@ -293,15 +301,25 @@ internal fun HeartRateApp(
                     // .verticalScroll(rememberScrollState())
                     .padding(innerPadding)
             ) {
+                val bpmJob = scope.launch(start = CoroutineStart.LAZY) {
+                    delay(ANIMATION_MILLIS)
+                    animationEnd = true
+                }
                 composable(route = HeartRateScreen.Home.name) {
                     HomeScreen(
                         onStartClick = { viewModel.start() },
                         showAwaitingClient = uiState.servicesState == ServicesState.Started &&
                             !uiState.isClientConnected,
                         bpm = uiState.bpm,
+                        animationEnd = animationEnd,
                         showStart = uiState.servicesState == ServicesState.Stopped &&
                             !uiState.startAndroidService
                     )
+                    if (localBpmCount != DEFAULT_BPM && localBpmCount != uiState.bpmCount) {
+                        bpmJob.start()
+                        animationEnd = false
+                    }
+                    localBpmCount = uiState.bpmCount
                 }
                 composable(route = HeartRateScreen.OpenSource.name) {
                     LibrariesContainer()

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import org.noblecow.hrservice.R
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory
 
 internal data class MainUiState(
     val bpm: Int = DEFAULT_BPM,
+    val bpmCount: Int = 0,
     val bluetoothRequested: Boolean? = null,
     val isClientConnected: Boolean = false,
     val permissionsRequested: List<String>? = null,
@@ -40,6 +42,7 @@ internal class MainViewModel @Inject constructor(
 
     val mainUiState: StateFlow<MainUiState>
 
+    private var bpmCount = 0
     private val permissionsRequested: MutableStateFlow<List<String>?>
     private val enableBluetooth: MutableStateFlow<Boolean?>
     private val startAndroidServiceFlow: MutableStateFlow<Boolean>
@@ -60,11 +63,12 @@ internal class MainViewModel @Inject constructor(
             permissionsRequested,
             enableBluetooth,
             userMessage,
-            mainRepository.getAppStateStream(),
+            mainRepository.getAppStateStream().onEach { bpmCount++ },
             startAndroidServiceFlow
         ) { permissionsRequested, bluetoothEnabled, userMessage, appState, startAndroidService ->
             MainUiState(
                 bpm = appState.bpm,
+                bpmCount = bpmCount,
                 bluetoothRequested = bluetoothEnabled,
                 isClientConnected = appState.isClientConnected,
                 permissionsRequested = permissionsRequested,
@@ -114,11 +118,6 @@ internal class MainViewModel @Inject constructor(
         if (permissionsRequested.value != null) {
             permissionsRequested.update { null } // reset
         }
-        /*
-        if (!bluetoothRequested.value) {
-            bluetoothRequested.update { false }
-        }
-         */
         if (enableBluetooth.value != false) { // User declined to enable BT
             val bleState = mainRepository.getHardwareState()
             if (bleState == HardwareState.HARDWARE_UNSUITABLE) {
