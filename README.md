@@ -8,10 +8,6 @@ This lets you share real time heart rate data from the Fitbit watch with exercis
 [watch app](https://gallery.fitbit.com/details/799d08f9-77d4-4a73-81dc-b187159a7124?key=c05ef0f4-c8f7-4459-94f7-50a209108fc6)
 working on OS 4 devices too! (Versa 2, Versa Lite, Versa, Ionic)
 
-### You can help
-Just join the [Google Group](https://groups.google.com/g/virtual-heart-rate-monitor-alpha) to get the app!  
-*Google requires 20 users to have the app installed for 14 days before it can be released into production.
-
 ![Apps](./apps.jpg)
 
 Currently, the Fitbit smart watches measure heart rate, but do not advertise as generic heart rate monitors and can only maintain one Bluetooth Low Energy connection with the Fibit phone app. As a work around, we'll send heart rate data from the watch to the phone. Then, we'll run an Android app that appears as a Bluetooth Low Energy peripheral and advertises as a generic heart rate monitor. Finally, we'll push heart rate data from the Fitbit Android app to our HR Monitor Android app.
@@ -24,7 +20,8 @@ Much thanks to the original author, [@mogenson](https://github.com/mogenson/fitb
 2. Install the "HR Service" Fitbit watch app from the [Fitbit Gallery](https://gallery.fitbit.com/details/6503a799-37f7-43bf-8775-23f1742e2a4e).  
    OR  
    Build and run the code using the [Fitbit CLI](https://dev.fitbit.com/getting-started/), start the developer bridge on your watch, and transfer the app.
-3. Opt into [closed testing](#you-can-help) on Google Play.
+3. Install Virtual Heart Rate Monitor from Google Play.  
+   [<img src="GetItOnGooglePlay_Badge_Web_color_English.png">](https://play.google.com/store/apps/details?id=org.noblecow.hrservice)
 4. If you plan on running a fitness app on a mobile device, e.g. Strava, you'll need a second device 
 on which to run it, since the device with the Fitbit app on it will also be running the HR Monitor app and 
 playing the role of the heart rate monitor.
@@ -32,7 +29,7 @@ playing the role of the heart rate monitor.
 ## To Use
 
 1. Start the "HR Service" app on the Fitbit watch.
-2. Start the "HR Monitor" app on the Android device.
+2. Start the "Virtual Heart Rate Monitor" app on the Android device.
    - You should see the BPM value update with each new received value.
 3. On your exercise equipment (or app on your second mobile device), search for a Bluetooth heart rate monitor.  
    - The mock heart rate monitor will have the same name as the Android device.
