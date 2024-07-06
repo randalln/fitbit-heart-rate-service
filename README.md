@@ -20,11 +20,12 @@ Much thanks to the original author, [@mogenson](https://github.com/mogenson/fitb
 2. Install the "HR Service" Fitbit watch app from the [Fitbit Gallery](https://gallery.fitbit.com/details/6503a799-37f7-43bf-8775-23f1742e2a4e).  
    OR  
    Build and run the code using the [Fitbit CLI](https://dev.fitbit.com/getting-started/), start the developer bridge on your watch, and transfer the app.
-3. Install Virtual Heart Rate Monitor from Google Play.  
-   [<img src="GetItOnGooglePlay_Badge_Web_color_English.png">](https://play.google.com/store/apps/details?id=org.noblecow.hrservice)
+3. Install Virtual Heart Rate Monitor from Google Play.
 4. If you plan on running a fitness app on a mobile device, e.g. Strava, you'll need a second device 
 on which to run it, since the device with the Fitbit app on it will also be running the HR Monitor app and 
 playing the role of the heart rate monitor.
+
+[<img src="GetItOnGooglePlay_Badge_Web_color_English.png">](https://play.google.com/store/apps/details?id=org.noblecow.hrservice)
 
 ## To Use
 
