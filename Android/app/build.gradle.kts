@@ -41,12 +41,12 @@ keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 
 android {
     namespace = "org.noblecow.hrservice"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "org.noblecow.hrservice"
         minSdk = 28
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 11
         versionName = "0.5.2"
     }

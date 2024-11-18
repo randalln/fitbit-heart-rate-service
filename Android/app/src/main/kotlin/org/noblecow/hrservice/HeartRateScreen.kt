@@ -199,7 +199,7 @@ internal fun HomeAppBar(
 @Suppress("LongMethod", "CyclomaticComplexMethod")
 internal fun HeartRateApp(
     workRequest: OneTimeWorkRequest,
-    workState: StateFlow<MutableList<WorkInfo>?>,
+    workState: StateFlow<List<WorkInfo>?>,
     workManager: WorkManager,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
