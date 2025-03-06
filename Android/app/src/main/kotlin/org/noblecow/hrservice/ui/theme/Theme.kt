@@ -46,6 +46,7 @@ fun HeartRateTheme(
         }
 
         darkTheme -> DarkColorScheme
+
         else -> LightColorScheme
     }
 

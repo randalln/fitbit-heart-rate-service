@@ -35,7 +35,9 @@ internal sealed class ServicesState {
     data object Started : ServicesState()
     data object Stopping : ServicesState(), ServicesTransitionState
     data object Stopped : ServicesState()
-    data class Error(val id: Int) : ServicesState()
+    data class Error(
+        val id: Int
+    ) : ServicesState()
 }
 
 internal interface ServicesTransitionState
@@ -99,14 +101,14 @@ internal class MainRepositoryImpl @Inject constructor(
     private fun getErrorState(
         advertisingState: AdvertisingState,
         webServerState: WebServerState
-    ): ServicesState? {
-        return when {
-            advertisingState is AdvertisingState.Failure ->
-                ServicesState.Error(R.string.error_advertise)
-            webServerState.error != null ->
-                ServicesState.Error(R.string.error_web_server)
-            else -> null
-        }
+    ): ServicesState? = when {
+        advertisingState is AdvertisingState.Failure ->
+            ServicesState.Error(R.string.error_advertise)
+
+        webServerState.error != null ->
+            ServicesState.Error(R.string.error_web_server)
+
+        else -> null
     }
 
     private fun getNormalState(
@@ -191,26 +193,22 @@ internal class MainRepositoryImpl @Inject constructor(
     override fun toggleFakeBpm() = startFakeBpm() || stopFakeBpm()
 
     @Suppress("TooGenericExceptionCaught")
-    private fun startFakeBpm(): Boolean {
-        return if (fakeBpmJob == null && servicesState.value == ServicesState.Started) {
-            fakeBpmJob = localScope.launch {
-                try {
-                    fakeBpmLocalDataSource.run()
-                } catch (error: Throwable) {
-                    logger.error(error.localizedMessage, error)
-                }
+    private fun startFakeBpm(): Boolean = if (fakeBpmJob == null && servicesState.value == ServicesState.Started) {
+        fakeBpmJob = localScope.launch {
+            try {
+                fakeBpmLocalDataSource.run()
+            } catch (error: Throwable) {
+                logger.error(error.localizedMessage, error)
             }
-            true
-        } else {
-            false
         }
+        true
+    } else {
+        false
     }
 
-    private fun stopFakeBpm(): Boolean {
-        return fakeBpmJob?.let {
-            it.cancel()
-            fakeBpmJob = null
-            true
-        } ?: false
-    }
+    private fun stopFakeBpm(): Boolean = fakeBpmJob?.let {
+        it.cancel()
+        fakeBpmJob = null
+        true
+    } ?: false
 }

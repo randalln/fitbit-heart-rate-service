@@ -24,7 +24,9 @@ import org.noblecow.hrservice.data.util.FAKE_BPM_START
 import org.noblecow.hrservice.data.util.PORT_LISTEN
 
 @Serializable
-internal data class Request(val bpm: Int)
+internal data class Request(
+    val bpm: Int
+)
 
 @Singleton
 internal class FakeBpmLocalDataSource @Inject constructor(
