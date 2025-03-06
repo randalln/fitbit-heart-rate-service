@@ -36,7 +36,9 @@ internal data class WebServerState(
 )
 
 @Serializable
-private data class Response(val status: String)
+private data class Response(
+    val status: String
+)
 
 private const val TAG = "WebServerLocalDataSource"
 
@@ -110,11 +112,9 @@ internal class WebServerLocalDataSource @Inject constructor() {
         }
     }
 
-    private fun stopKtor(): Boolean {
-        return ktorServer?.let {
-            it.stop()
-            ktorServer = null
-            true
-        } ?: false
-    }
+    private fun stopKtor(): Boolean = ktorServer?.let {
+        it.stop()
+        ktorServer = null
+        true
+    } ?: false
 }

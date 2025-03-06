@@ -50,7 +50,9 @@ internal interface BluetoothLocalDataSource {
 internal sealed class AdvertisingState {
     data object Started : AdvertisingState()
     data object Stopped : AdvertisingState()
-    data class Failure(val error: AdvertiseError) : AdvertisingState()
+    data class Failure(
+        val error: AdvertiseError
+    ) : AdvertisingState()
 }
 
 internal enum class HardwareState {
@@ -232,21 +234,19 @@ internal class BluetoothLocalDataSourceImpl @Inject constructor(
         }
     }
 
-    override fun getHardwareState(): HardwareState {
-        return bluetoothManager?.let { manager ->
-            val bluetoothAdapter = manager.adapter
-            // We can't continue without proper Bluetooth support
-            if (!checkBluetoothSupport(bluetoothAdapter)) {
-                null
+    override fun getHardwareState(): HardwareState = bluetoothManager?.let { manager ->
+        val bluetoothAdapter = manager.adapter
+        // We can't continue without proper Bluetooth support
+        if (!checkBluetoothSupport(bluetoothAdapter)) {
+            null
+        } else {
+            if (!bluetoothAdapter.isEnabled) {
+                HardwareState.DISABLED
             } else {
-                if (!bluetoothAdapter.isEnabled) {
-                    HardwareState.DISABLED
-                } else {
-                    HardwareState.READY
-                }
+                HardwareState.READY
             }
-        } ?: HardwareState.HARDWARE_UNSUITABLE
-    }
+        }
+    } ?: HardwareState.HARDWARE_UNSUITABLE
 
     /**
      * Verify the level of Bluetooth support provided by the hardware.
@@ -259,10 +259,12 @@ internal class BluetoothLocalDataSourceImpl @Inject constructor(
                 Log.w(TAG, "Bluetooth is not supported")
                 false
             }
+
             !context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) -> {
                 Log.w(TAG, "Bluetooth LE is not supported")
                 return false
             }
+
             else -> true
         }
     }

@@ -7,7 +7,9 @@ import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
 @HiltAndroidApp
-internal class HeartRateApplication : Application(), Configuration.Provider {
+internal class HeartRateApplication :
+    Application(),
+    Configuration.Provider {
 
     @Inject lateinit var workerFactory: HiltWorkerFactory
 

@@ -41,24 +41,18 @@ internal open class BaseService(
         peripheralManager.notifyCharacteristicChanged(value!!, characteristic)
     }
 
-    fun noCentralsConnected(): Boolean {
-        return peripheralManager.connectedCentrals.isEmpty()
-    }
+    fun noCentralsConnected(): Boolean = peripheralManager.connectedCentrals.isEmpty()
 
     override fun onCharacteristicRead(
         central: BluetoothCentral,
         characteristic: BluetoothGattCharacteristic
-    ): ReadResponse {
-        return ReadResponse(GattStatus.REQUEST_NOT_SUPPORTED, ByteArray(0))
-    }
+    ): ReadResponse = ReadResponse(GattStatus.REQUEST_NOT_SUPPORTED, ByteArray(0))
 
     override fun onCharacteristicWrite(
         central: BluetoothCentral,
         characteristic: BluetoothGattCharacteristic,
         value: ByteArray
-    ): GattStatus {
-        return GattStatus.SUCCESS
-    }
+    ): GattStatus = GattStatus.SUCCESS
 
     override fun onCharacteristicWriteCompleted(
         central: BluetoothCentral,
@@ -69,17 +63,13 @@ internal open class BaseService(
     override fun onDescriptorRead(
         central: BluetoothCentral,
         descriptor: BluetoothGattDescriptor
-    ): ReadResponse {
-        return ReadResponse(GattStatus.REQUEST_NOT_SUPPORTED, ByteArray(0))
-    }
+    ): ReadResponse = ReadResponse(GattStatus.REQUEST_NOT_SUPPORTED, ByteArray(0))
 
     override fun onDescriptorWrite(
         central: BluetoothCentral,
         descriptor: BluetoothGattDescriptor,
         value: ByteArray
-    ): GattStatus {
-        return GattStatus.SUCCESS
-    }
+    ): GattStatus = GattStatus.SUCCESS
 
     override fun onNotifyingEnabled(
         central: BluetoothCentral,

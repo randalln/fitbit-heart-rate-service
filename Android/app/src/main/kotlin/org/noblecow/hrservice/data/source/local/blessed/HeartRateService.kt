@@ -40,13 +40,11 @@ internal class HeartRateService(
     override fun onNotifyingEnabled(
         central: BluetoothCentral,
         characteristic: BluetoothGattCharacteristic
-    ): Boolean {
-        return if (characteristic.uuid == HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID) {
-            notifyEnabled = true
-            true
-        } else {
-            false
-        }
+    ): Boolean = if (characteristic.uuid == HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID) {
+        notifyEnabled = true
+        true
+    } else {
+        false
     }
 
     override fun onNotifyingDisabled(

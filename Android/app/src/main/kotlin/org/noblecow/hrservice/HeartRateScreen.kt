@@ -65,7 +65,9 @@ import org.noblecow.hrservice.ui.HomeScreen
 import org.noblecow.hrservice.ui.MainViewModel
 import org.slf4j.LoggerFactory
 
-enum class HeartRateScreen(@StringRes val title: Int) {
+enum class HeartRateScreen(
+    @StringRes val title: Int
+) {
     Home(title = R.string.app_name),
     OpenSource(title = R.string.open_source)
 }
