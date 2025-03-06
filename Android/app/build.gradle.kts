@@ -119,8 +119,7 @@ dependencies {
 
     // Third-party libraries
     implementation(libs.aboutlibraries.compose.m3)
-    // implementation(libs.blessed.kotlin)
-    implementation(project(":blessed"))
+    implementation(libs.blessed.kotlin)
     implementation(libs.timber)
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.content.negotiation)

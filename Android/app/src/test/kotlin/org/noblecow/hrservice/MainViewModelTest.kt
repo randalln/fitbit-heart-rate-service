@@ -46,15 +46,15 @@ class MainViewModelTest {
         viewModel = MainViewModel(mainRepository, permissionsHelper)
 
         viewModel.mainUiState.test {
-            assertEquals(MainUiState(), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1), awaitItem())
             viewModel.start()
-            assertEquals(MainUiState(bluetoothRequested = true), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1, bluetoothRequested = true), awaitItem())
             viewModel.start()
         }
     }
 
     @Test
-    fun `user starts workflow and grants permissions`() = runTest {
+    fun `user starts workŒflow and grants permissions`() = runTest {
         every { mainRepository.permissionsGranted() } returns false
         every { mainRepository.getMissingPermissions() } returns bluetoothPermissions
         val notificationPermissions = arrayOf(
@@ -66,17 +66,17 @@ class MainViewModelTest {
         val allPermissions = bluetoothPermissions + notificationPermissions
 
         viewModel.mainUiState.test {
-            assertEquals(MainUiState(), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1), awaitItem())
             viewModel.start()
-            assertEquals(MainUiState(permissionsRequested = allPermissions.toList()), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1, permissionsRequested = allPermissions.toList()), awaitItem())
             viewModel.receivePermissions(
                 mapOf(
                     bluetoothPermissions[0] to true,
                     bluetoothPermissions[1] to true
                 )
             )
-            assertEquals(MainUiState(), awaitItem())
-            assertEquals(MainUiState(startAndroidService = true), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1, startAndroidService = true), awaitItem())
         }
     }
 
@@ -86,16 +86,16 @@ class MainViewModelTest {
         viewModel = MainViewModel(mainRepository, permissionsHelper)
 
         viewModel.mainUiState.test {
-            assertEquals(MainUiState(), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1), awaitItem())
             viewModel.receivePermissions(
                 mapOf(
                     bluetoothPermissions[0] to true,
                     bluetoothPermissions[1] to false
                 )
             )
-            assertEquals(MainUiState(userMessage = R.string.permissions_denied), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1, userMessage = R.string.permissions_denied), awaitItem())
             viewModel.userMessageShown()
-            assertEquals(MainUiState(), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1), awaitItem())
         }
     }
 
@@ -108,15 +108,15 @@ class MainViewModelTest {
 
     private suspend fun happyPathToStarted() {
         viewModel.mainUiState.test {
-            assertEquals(MainUiState(), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1), awaitItem())
             viewModel.start()
-            assertEquals(MainUiState(startAndroidService = true), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1, startAndroidService = true), awaitItem())
             viewModel.androidServiceStarted()
-            assertEquals(MainUiState(), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1), awaitItem())
             appStateFlow.value = AppState(servicesState = ServicesState.Starting)
-            assertEquals(MainUiState(servicesState = ServicesState.Starting), awaitItem())
+            assertEquals(MainUiState(bpmCount = 2, servicesState = ServicesState.Starting), awaitItem())
             appStateFlow.value = AppState(servicesState = ServicesState.Started)
-            assertEquals(MainUiState(servicesState = ServicesState.Started), awaitItem())
+            assertEquals(MainUiState(bpmCount = 3, servicesState = ServicesState.Started), awaitItem())
         }
     }
 
@@ -125,13 +125,13 @@ class MainViewModelTest {
         viewModel = MainViewModel(mainRepository, permissionsHelper)
 
         viewModel.mainUiState.test {
-            assertEquals(MainUiState(), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1), awaitItem())
             appStateFlow.value = AppState(
                 servicesState = ServicesState.Started,
                 isClientConnected = true
             )
             assertEquals(
-                MainUiState(servicesState = ServicesState.Started, isClientConnected = true),
+                MainUiState(bpmCount = 2, servicesState = ServicesState.Started, isClientConnected = true),
                 awaitItem()
             )
         }
@@ -143,11 +143,11 @@ class MainViewModelTest {
         viewModel = MainViewModel(mainRepository, permissionsHelper)
 
         viewModel.mainUiState.test {
-            assertEquals(MainUiState(), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1), awaitItem())
             viewModel.start()
-            assertEquals(MainUiState(userMessage = R.string.error_hardware), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1, userMessage = R.string.error_hardware), awaitItem())
             viewModel.userMessageShown()
-            assertEquals(MainUiState(), awaitItem())
+            assertEquals(MainUiState(bpmCount = 1), awaitItem())
         }
     }
 
@@ -159,9 +159,9 @@ class MainViewModelTest {
         viewModel.mainUiState.test {
             awaitItem()
             appStateFlow.value = AppState(servicesState = ServicesState.Stopping)
-            assertEquals(MainUiState(servicesState = ServicesState.Stopping), awaitItem())
+            assertEquals(MainUiState(bpmCount = 4, servicesState = ServicesState.Stopping), awaitItem())
             appStateFlow.value = AppState(servicesState = ServicesState.Stopped)
-            assertEquals(MainUiState(servicesState = ServicesState.Stopped), awaitItem())
+            assertEquals(MainUiState(bpmCount = 5, servicesState = ServicesState.Stopped), awaitItem())
         }
     }
 
@@ -177,7 +177,7 @@ class MainViewModelTest {
                 servicesState = ServicesState.Started
             )
             assertEquals(
-                MainUiState(bpm = FAKE_BPM_START, servicesState = ServicesState.Started),
+                MainUiState(bpm = FAKE_BPM_START, bpmCount = 4, servicesState = ServicesState.Started),
                 awaitItem()
             )
         }
@@ -198,6 +198,7 @@ class MainViewModelTest {
             assertEquals(
                 MainUiState(
                     bpm = FAKE_BPM_START,
+                    bpmCount = 4,
                     isClientConnected = true,
                     servicesState = ServicesState.Started
                 ),
