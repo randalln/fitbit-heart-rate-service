@@ -17,8 +17,6 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -42,8 +40,7 @@ private data class Response(
 
 private const val TAG = "WebServerLocalDataSource"
 
-@Singleton
-internal class WebServerLocalDataSource @Inject constructor() {
+internal class WebServerLocalDataSource {
 
     // SharedFlow, because heart rate can be unchanged
     private val _bpmStream = MutableSharedFlow<Int>()

@@ -1,20 +1,22 @@
 package org.noblecow.hrservice
 
 import android.app.Application
-import androidx.hilt.work.HiltWorkerFactory
-import androidx.work.Configuration
-import dagger.hilt.android.HiltAndroidApp
-import javax.inject.Inject
+import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
+import org.koin.androidx.workmanager.koin.workManagerFactory
+import org.koin.core.context.startKoin
+import org.noblecow.hrservice.di.appModule
 
-@HiltAndroidApp
-internal class HeartRateApplication :
-    Application(),
-    Configuration.Provider {
+internal class HeartRateApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
 
-    @Inject lateinit var workerFactory: HiltWorkerFactory
-
-    override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder()
-            .setWorkerFactory(workerFactory)
-            .build()
+        // Initialize Koin
+        startKoin {
+            androidLogger()
+            androidContext(this@HeartRateApplication)
+            workManagerFactory()
+            modules(appModule)
+        }
+    }
 }

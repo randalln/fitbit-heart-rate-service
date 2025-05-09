@@ -1,7 +1,5 @@
 package org.noblecow.hrservice.data.repository
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -14,7 +12,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.noblecow.hrservice.R
-import org.noblecow.hrservice.data.di.IoDispatcher
 import org.noblecow.hrservice.data.source.local.AdvertisingState
 import org.noblecow.hrservice.data.source.local.BluetoothLocalDataSource
 import org.noblecow.hrservice.data.source.local.FakeBpmLocalDataSource
@@ -54,13 +51,12 @@ internal interface MainRepository {
 
 private const val TAG = "MainRepositoryImpl"
 
-@Singleton
 @Suppress("TooManyFunctions")
-internal class MainRepositoryImpl @Inject constructor(
+internal class MainRepositoryImpl(
     private val bluetoothLocalDataSource: BluetoothLocalDataSource,
     private val webServerLocalDataSource: WebServerLocalDataSource,
     private val fakeBpmLocalDataSource: FakeBpmLocalDataSource,
-    @IoDispatcher dispatcher: CoroutineDispatcher
+    dispatcher: CoroutineDispatcher
 ) : MainRepository {
 
     private var fakeBpmJob: Job? = null

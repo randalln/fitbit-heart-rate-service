@@ -4,11 +4,9 @@ import android.Manifest
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
 
-internal class PermissionsHelper @Inject constructor(
-    @ApplicationContext val context: Context
+internal class PermissionsHelper(
+    val context: Context
 ) {
     fun getMissingNotificationsPermissions(): Array<String> {
         var missingPermissions = emptyArray<String>()

@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -14,7 +13,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import org.noblecow.hrservice.ui.theme.HeartRateTheme
 
-@AndroidEntryPoint
 internal class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
