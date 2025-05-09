@@ -19,18 +19,13 @@ import com.welie.blessed.BluetoothPeripheralManager
 import com.welie.blessed.BluetoothPeripheralManagerCallback
 import com.welie.blessed.GattStatus
 import com.welie.blessed.ReadResponse
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.noblecow.hrservice.data.di.DefaultDispatcher
 import org.noblecow.hrservice.data.source.local.blessed.HeartRateService
 import org.noblecow.hrservice.data.source.local.blessed.Service
 
@@ -61,11 +56,10 @@ internal enum class HardwareState {
     READY
 }
 
-@Singleton
 @SuppressLint("MissingPermission")
-internal class BluetoothLocalDataSourceImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
-    @DefaultDispatcher dispatcher: CoroutineDispatcher = Dispatchers.Default
+internal class BluetoothLocalDataSourceImpl(
+    private val context: Context,
+    dispatcher: CoroutineDispatcher
 ) : BluetoothLocalDataSource {
 
     private val _advertisingState = MutableStateFlow<AdvertisingState>(AdvertisingState.Stopped)

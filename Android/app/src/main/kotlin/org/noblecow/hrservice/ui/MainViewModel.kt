@@ -2,8 +2,6 @@ package org.noblecow.hrservice.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,9 +31,8 @@ internal data class MainUiState(
 private const val STOP_TIMEOUT_MILLIS = 5000L
 private const val TAG = "MainViewModel"
 
-@HiltViewModel
 @Suppress("TooManyFunctions")
-internal class MainViewModel @Inject constructor(
+internal class MainViewModel(
     private val mainRepository: MainRepository,
     private val permissionsHelper: PermissionsHelper
 ) : ViewModel() {

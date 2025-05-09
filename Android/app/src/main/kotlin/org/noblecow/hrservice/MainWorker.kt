@@ -11,18 +11,14 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.CATEGORY_STATUS
 import androidx.core.app.NotificationManagerCompat
-import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
-import org.noblecow.hrservice.data.di.IoDispatcher
 import org.noblecow.hrservice.data.repository.AppState
 import org.noblecow.hrservice.data.repository.MainRepository
 import org.noblecow.hrservice.data.repository.ServicesState
@@ -34,12 +30,11 @@ private const val NOTIFICATION_ID = 0
 private const val TAG = "MainWorker"
 internal const val WORKER_NAME = "mainWorker"
 
-@HiltWorker
-internal class MainWorker @AssistedInject constructor(
-    @Assisted context: Context,
-    @Assisted params: WorkerParameters,
+internal class MainWorker(
+    context: Context,
+    params: WorkerParameters,
     private val mainRepository: MainRepository,
-    @IoDispatcher dispatcher: CoroutineDispatcher
+    dispatcher: CoroutineDispatcher
 ) : CoroutineWorker(context, params) {
 
     private val notificationManager = context.getSystemService(

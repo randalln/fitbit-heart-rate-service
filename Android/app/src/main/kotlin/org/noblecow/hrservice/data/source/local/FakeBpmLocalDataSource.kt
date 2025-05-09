@@ -9,15 +9,12 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import java.time.Duration
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.time.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import org.noblecow.hrservice.data.di.IoDispatcher
 import org.noblecow.hrservice.data.util.FAKE_BPM_END
 import org.noblecow.hrservice.data.util.FAKE_BPM_INTERVAL
 import org.noblecow.hrservice.data.util.FAKE_BPM_START
@@ -28,9 +25,8 @@ internal data class Request(
     val bpm: Int
 )
 
-@Singleton
-internal class FakeBpmLocalDataSource @Inject constructor(
-    @IoDispatcher private val dispatcher: CoroutineDispatcher
+internal class FakeBpmLocalDataSource(
+    private val dispatcher: CoroutineDispatcher
 ) {
     private val httpClient: HttpClient by lazy {
         HttpClient(Android) {

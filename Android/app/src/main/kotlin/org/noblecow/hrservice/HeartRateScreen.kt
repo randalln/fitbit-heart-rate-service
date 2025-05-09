@@ -43,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -58,6 +57,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.data.util.ANIMATION_MILLIS
 import org.noblecow.hrservice.data.util.DEFAULT_BPM
@@ -205,7 +205,7 @@ internal fun HeartRateApp(
     workManager: WorkManager,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    viewModel: MainViewModel = hiltViewModel()
+    viewModel: MainViewModel = koinViewModel()
 ) {
     val logger = LoggerFactory.getLogger("HeartRateApp")
     val uiState by viewModel.mainUiState.collectAsState()
