@@ -26,8 +26,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.koin.core.annotation.Single
 import org.noblecow.hrservice.data.source.local.blessed.HeartRateService
 import org.noblecow.hrservice.data.source.local.blessed.Service
+import org.noblecow.hrservice.di.DefaultDispatcher
 
 private const val TAG = "BluetoothLocalDataSource"
 
@@ -57,9 +59,10 @@ internal enum class HardwareState {
 }
 
 @SuppressLint("MissingPermission")
+@Single
 internal class BluetoothLocalDataSourceImpl(
     private val context: Context,
-    dispatcher: CoroutineDispatcher
+    @DefaultDispatcher dispatcher: CoroutineDispatcher
 ) : BluetoothLocalDataSource {
 
     private val _advertisingState = MutableStateFlow<AdvertisingState>(AdvertisingState.Stopped)
@@ -297,7 +300,7 @@ internal class BluetoothLocalDataSourceImpl(
         peripheralManager = null
     }
 
-    override fun permissionsGranted() = peripheralManager?.permissionsGranted() ?: false
+    override fun permissionsGranted() = peripheralManager?.permissionsGranted() == true
 
     override fun startAdvertising() {
         initialize()

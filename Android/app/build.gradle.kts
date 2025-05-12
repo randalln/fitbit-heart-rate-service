@@ -38,6 +38,10 @@ val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
 keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 
+ksp {
+    arg("KOIN_CONFIG_CHECK", "true")
+}
+
 android {
     namespace = "org.noblecow.hrservice"
     compileSdk = 35
@@ -131,6 +135,8 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
     implementation(libs.koin.androidx.workmanager)
+    implementation(libs.koin.annotations)
+    ksp(libs.koin.ksp.compiler)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk.android)
