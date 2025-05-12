@@ -15,18 +15,21 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.time.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import org.koin.core.annotation.Single
 import org.noblecow.hrservice.data.util.FAKE_BPM_END
 import org.noblecow.hrservice.data.util.FAKE_BPM_INTERVAL
 import org.noblecow.hrservice.data.util.FAKE_BPM_START
 import org.noblecow.hrservice.data.util.PORT_LISTEN
+import org.noblecow.hrservice.di.IoDispatcher
 
 @Serializable
 internal data class Request(
     val bpm: Int
 )
 
+@Single
 internal class FakeBpmLocalDataSource(
-    private val dispatcher: CoroutineDispatcher
+    @IoDispatcher private val dispatcher: CoroutineDispatcher
 ) {
     private val httpClient: HttpClient by lazy {
         HttpClient(Android) {

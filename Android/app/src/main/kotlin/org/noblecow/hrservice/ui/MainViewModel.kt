@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import org.koin.android.annotation.KoinViewModel
 import org.noblecow.hrservice.R
 import org.noblecow.hrservice.data.repository.MainRepository
 import org.noblecow.hrservice.data.repository.ServicesState
@@ -32,6 +33,7 @@ private const val STOP_TIMEOUT_MILLIS = 5000L
 private const val TAG = "MainViewModel"
 
 @Suppress("TooManyFunctions")
+@KoinViewModel
 internal class MainViewModel(
     private val mainRepository: MainRepository,
     private val permissionsHelper: PermissionsHelper

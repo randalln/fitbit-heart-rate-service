@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
+import org.koin.core.annotation.Single
 import org.noblecow.hrservice.BuildConfig
 import org.noblecow.hrservice.data.util.PORT_LISTEN
 import org.slf4j.LoggerFactory
@@ -40,6 +41,7 @@ private data class Response(
 
 private const val TAG = "WebServerLocalDataSource"
 
+@Single
 internal class WebServerLocalDataSource {
 
     // SharedFlow, because heart rate can be unchanged

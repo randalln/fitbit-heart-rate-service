@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.koin.core.annotation.Single
 import org.noblecow.hrservice.R
 import org.noblecow.hrservice.data.source.local.AdvertisingState
 import org.noblecow.hrservice.data.source.local.BluetoothLocalDataSource
@@ -19,6 +20,7 @@ import org.noblecow.hrservice.data.source.local.HardwareState
 import org.noblecow.hrservice.data.source.local.WebServerLocalDataSource
 import org.noblecow.hrservice.data.source.local.WebServerState
 import org.noblecow.hrservice.data.util.DEFAULT_BPM
+import org.noblecow.hrservice.di.IoDispatcher
 import org.slf4j.LoggerFactory
 
 internal data class AppState(
@@ -52,11 +54,12 @@ internal interface MainRepository {
 private const val TAG = "MainRepositoryImpl"
 
 @Suppress("TooManyFunctions")
+@Single
 internal class MainRepositoryImpl(
     private val bluetoothLocalDataSource: BluetoothLocalDataSource,
     private val webServerLocalDataSource: WebServerLocalDataSource,
     private val fakeBpmLocalDataSource: FakeBpmLocalDataSource,
-    dispatcher: CoroutineDispatcher
+    @IoDispatcher dispatcher: CoroutineDispatcher
 ) : MainRepository {
 
     private var fakeBpmJob: Job? = null
@@ -206,5 +209,5 @@ internal class MainRepositoryImpl(
         it.cancel()
         fakeBpmJob = null
         true
-    } ?: false
+    } == true
 }

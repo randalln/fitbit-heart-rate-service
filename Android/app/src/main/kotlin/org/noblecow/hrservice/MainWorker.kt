@@ -19,10 +19,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
+import org.koin.android.annotation.KoinWorker
 import org.noblecow.hrservice.data.repository.AppState
 import org.noblecow.hrservice.data.repository.MainRepository
 import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.data.util.DEFAULT_BPM
+import org.noblecow.hrservice.di.IoDispatcher
 import org.slf4j.LoggerFactory
 
 private const val CHANNEL_ID = "channel_id_1"
@@ -30,11 +32,12 @@ private const val NOTIFICATION_ID = 0
 private const val TAG = "MainWorker"
 internal const val WORKER_NAME = "mainWorker"
 
+@KoinWorker
 internal class MainWorker(
     context: Context,
     params: WorkerParameters,
     private val mainRepository: MainRepository,
-    dispatcher: CoroutineDispatcher
+    @IoDispatcher dispatcher: CoroutineDispatcher
 ) : CoroutineWorker(context, params) {
 
     private val notificationManager = context.getSystemService(
