@@ -308,14 +308,15 @@ internal fun HeartRateApp(
                     animationEnd = true
                 }
                 composable(route = HeartRateScreen.Home.name) {
+                    val showStart = uiState.servicesState == ServicesState.Stopped &&
+                        !uiState.startAndroidService
                     HomeScreen(
-                        onStartClick = { viewModel.start() },
+                        onStartClick = { if (showStart) viewModel.start() else viewModel.stop() },
                         showAwaitingClient = uiState.servicesState == ServicesState.Started &&
                             !uiState.isClientConnected,
                         bpm = uiState.bpm,
                         animationEnd = animationEnd,
-                        showStart = uiState.servicesState == ServicesState.Stopped &&
-                            !uiState.startAndroidService
+                        showStart = showStart
                     )
                     if (localBpmCount != DEFAULT_BPM && localBpmCount != uiState.bpmCount) {
                         bpmJob.start()

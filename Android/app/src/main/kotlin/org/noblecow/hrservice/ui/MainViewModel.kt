@@ -90,6 +90,10 @@ internal class MainViewModel(
         confirmPermissions()
     }
 
+    fun stop() {
+        mainRepository.stopServices()
+    }
+
     private fun confirmPermissions() {
         val missingNotificationPerms = permissionsHelper.getMissingNotificationsPermissions()
 
