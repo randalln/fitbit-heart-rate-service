@@ -66,7 +66,7 @@ internal class MainWorker(
                         val updateNotification = previousState?.let { previousState ->
                             previousState.bpm != it.bpm ||
                                 previousState.isClientConnected != it.isClientConnected
-                        } ?: true
+                        } != false
                         if (updateNotification) {
                             updateNotification(it)
                             notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())

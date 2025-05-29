@@ -73,10 +73,9 @@ internal fun HomeScreen(
         }
         Button(
             onClick = onStartClick,
-            enabled = showStart,
             modifier = Modifier.wrapContentSize()
         ) {
-            Text(text = stringResource(R.string.start))
+            Text(text = if (showStart) stringResource(R.string.start) else stringResource(R.string.stop))
         }
     }
 }
