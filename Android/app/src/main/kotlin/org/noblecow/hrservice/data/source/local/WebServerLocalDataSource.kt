@@ -5,10 +5,11 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.call
 import io.ktor.server.application.install
-import io.ktor.server.engine.BaseApplicationEngine
+import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import io.ktor.server.plugins.callloging.CallLogging
+import io.ktor.server.netty.NettyApplicationEngine
+import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.receive
@@ -51,10 +52,10 @@ internal class WebServerLocalDataSource {
     val webServerState = _webServerState.asStateFlow()
 
     private var currentRequest: Request? = null
-    private var ktorServer: BaseApplicationEngine? = null
+    private var ktorServer: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>? = null
     private val logger = LoggerFactory.getLogger(TAG)
 
-    suspend fun start() {
+    fun start() {
         if (ktorServer == null) {
             ktorServer = embeddedServer(Netty, PORT_LISTEN) {
                 install(StatusPages) {
@@ -115,5 +116,5 @@ internal class WebServerLocalDataSource {
         it.stop()
         ktorServer = null
         true
-    } ?: false
+    } == true
 }
