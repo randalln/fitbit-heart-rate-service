@@ -52,6 +52,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.mikepenz.aboutlibraries.ui.compose.android.rememberLibraries
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.delay
@@ -66,7 +67,7 @@ import org.noblecow.hrservice.ui.MainViewModel
 import org.slf4j.LoggerFactory
 
 enum class HeartRateScreen(
-    @StringRes val title: Int
+    @param:StringRes val title: Int
 ) {
     Home(title = R.string.app_name),
     OpenSource(title = R.string.open_source)
@@ -325,7 +326,8 @@ internal fun HeartRateApp(
                     localBpmCount = uiState.bpmCount
                 }
                 composable(route = HeartRateScreen.OpenSource.name) {
-                    LibrariesContainer()
+                    val libraries by rememberLibraries(R.raw.aboutlibraries)
+                    LibrariesContainer(libraries, Modifier.fillMaxSize())
                 }
                 userMessage?.let {
                     scope.launch {

@@ -29,7 +29,7 @@ internal data class Request(
 
 @Single
 internal class FakeBpmLocalDataSource(
-    @IoDispatcher private val dispatcher: CoroutineDispatcher
+    @param:IoDispatcher private val dispatcher: CoroutineDispatcher
 ) {
     private val httpClient: HttpClient by lazy {
         HttpClient(Android) {

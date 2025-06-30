@@ -11,7 +11,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
-import org.koin.androidx.compose.KoinAndroidContext
 import org.noblecow.hrservice.ui.theme.HeartRateTheme
 
 internal class MainActivity : ComponentActivity() {
@@ -32,13 +31,11 @@ internal class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             HeartRateTheme {
-                KoinAndroidContext {
-                    HeartRateApp(
-                        workRequest = workRequest,
-                        workState = workState,
-                        workManager = workManager
-                    )
-                }
+                HeartRateApp(
+                    workRequest = workRequest,
+                    workState = workState,
+                    workManager = workManager
+                )
             }
         }
     }
