@@ -1,39 +1,47 @@
 [versions]
-aboutLibs = "12.2.3"
-activity = "1.10.1"
-activity-compose = "1.10.1"
-agp = "8.11.0"
+aboutLibs = "12.2.4"
+activity = "1.11.0"
+activity-compose = "1.11.0"
+agp = "8.13.0"
 blessedKotlin = "3.0.9"
-compose-bom = "2025.06.01"
-compose-rules-detekt = "0.4.22"
+compose-bom = "2025.09.00"
+compose-rules-detekt = "0.4.27"
 detekt = "1.23.8"
 junit = "4.13.2"
 koin-annotations = "2.1.0"
-koin-bom = "4.1.0"
-kotlin = "2.2.0"
+koin-bom = "4.1.1"
+kotlin = "2.2.10"
 kotlinxCoroutinesTest = "1.10.2"
-ksp = "2.2.0-2.0.2"
-ktlint = "12.3.0"
-ktor = "3.1.3"
+ksp = "2.2.10-2.0.2"
+ktlint = "13.1.0"
+ktor = "3.3.0"
 logbackAndroid = "3.0.0"
 logbackClassic = "1.5.18"
-material = "1.12.0"
-mockk = "1.14.4"
-navigation = "2.9.0"
-navigationComposeVersion = "2.9.0"
+material = "1.13.0"
+mockk = "1.14.5"
+navigation = "2.9.4"
+navigationComposeVersion = "2.9.4"
 slf4jApi = "2.0.17"
+testRules = "1.7.0"
+testRunner = "1.7.0"
 timber = "5.0.1"
 turbine = "1.2.1"
-workRuntimeKtx = "2.10.2"
-uiTooling = "1.8.3"
+workRuntimeKtx = "2.10.4"
 
 [libraries]
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibs" }
 activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity-compose" }
 activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activity" }
+# Compose
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
-androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
-androidx-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-ui-test = { group = "androidx.compose.ui", name = "ui-test" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "testRules" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
 blessed-kotlin = { module = "com.github.weliem:blessed-kotlin", version.ref = "blessedKotlin" }
 compose-rules-detekt = { module = "io.nlopez.compose.rules:detekt", version.ref = "compose-rules-detekt" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -41,8 +49,8 @@ koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }
 koin-android = { module = "io.insert-koin:koin-android" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose" }
 koin-androidx-workmanager = { module = "io.insert-koin:koin-androidx-workmanager" }
-koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations"}
-koin-ksp-compiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin-annotations"}
+koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations" }
+koin-ksp-compiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin-annotations" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
 ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
@@ -64,10 +72,9 @@ slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4jApi" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
-androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiTooling" }
 
 [plugins]
-aboutLibs = { id = "com.mikepenz.aboutlibraries.plugin", version.ref= "aboutLibs" }
+aboutLibs = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibs" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }

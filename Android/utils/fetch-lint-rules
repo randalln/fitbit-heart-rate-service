@@ -4,12 +4,13 @@
 # e.g. .git/hooks/post-checkout
 
 COMPOSE_RULES="$(grep -E 'compose-rules-detekt = "[0-9]' gradle/libs.versions.toml | cut -f 2 -d \")"
-OUTPUT_DIR="lint-rules"
+OUTPUT_DIR="${HOME}/lint-rules"
 JARS="detekt ktlint"
 
 mkdir -p ${OUTPUT_DIR}
 
 for JAR in ${JARS}; do
+    echo $COMPOSE_RULES
     if [ ! -f ${OUTPUT_DIR}/${JAR}-compose-${COMPOSE_RULES}-all.jar ]; then
 	echo "Fetching ${JAR}-compose-${COMPOSE_RULES}-all.jar ..."
 	curl -L -OJ --output-dir ${OUTPUT_DIR} https://github.com/mrmans0n/compose-rules/releases/download/v${COMPOSE_RULES}/${JAR}-compose-${COMPOSE_RULES}-all.jar

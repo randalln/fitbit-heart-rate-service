@@ -1,0 +1,3 @@
+#!/bin/bash
+
+./gradlew --rerun-tasks detekt ktlintCheck testDebugUnitTest connectedAndroidTest

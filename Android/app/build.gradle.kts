@@ -45,14 +45,16 @@ ksp {
 
 android {
     namespace = "org.noblecow.hrservice"
-    compileSdk = 35
+    compileSdk = 36
+    ndkVersion = "29.0.14033849"
 
     defaultConfig {
         applicationId = "org.noblecow.hrservice"
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 13
         versionName = "0.7.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures {
         viewBinding = true
@@ -91,6 +93,12 @@ android {
             )
         }
     }
+    testOptions {
+        animationsDisabled = true
+        packaging {
+            resources.excludes.add("META-INF/LICENSE*.md")
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -113,13 +121,15 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.activity.compose)
     implementation(libs.activity.ktx)
-    implementation(libs.androidx.material3)
-    debugImplementation(libs.androidx.ui.tooling)
-    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    debugImplementation(libs.androidx.test.runner)
     implementation(libs.material)
     implementation(libs.navigation.compose)
     implementation(libs.navigation.ui.ktx)
     implementation(libs.work.runtime.ktx)
+    implementation(libs.androidx.compose.ui.test)
 
     // Third-party libraries
     implementation(libs.aboutlibraries.compose.m3)
@@ -150,6 +160,12 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.logback.classic)
     testImplementation(libs.turbine)
+
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.rules)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
 
 configurations.testImplementation {
