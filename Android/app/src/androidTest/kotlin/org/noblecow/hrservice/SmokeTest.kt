@@ -1,13 +1,16 @@
 package org.noblecow.hrservice
 
 import android.Manifest
+import android.app.UiAutomation
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.test.rule.GrantPermissionRule
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.AfterClass
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 
@@ -17,12 +20,18 @@ class SmokeTest {
     @get:Rule
     internal val composeTestRule = createAndroidComposeRule<MainActivity>()
 
-    @get:Rule
-    val permissionRule = GrantPermissionRule.grant(
-        Manifest.permission.BLUETOOTH_CONNECT,
-        Manifest.permission.BLUETOOTH_ADVERTISE,
-        Manifest.permission.POST_NOTIFICATIONS
-    )
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun beforeClass() {
+            val packageName = InstrumentationRegistry.getInstrumentation().targetContext.packageName
+            InstrumentationRegistry.getInstrumentation().uiAutomation.apply {
+                grantRuntimePermission(packageName, Manifest.permission.BLUETOOTH_CONNECT)
+                grantRuntimePermission(packageName, Manifest.permission.BLUETOOTH_ADVERTISE)
+                grantRuntimePermission(packageName, Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
 
     @Test
     fun basicTest() {
