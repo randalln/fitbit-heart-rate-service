@@ -10,8 +10,9 @@
     <option name="enableForProjectResult" value="Accepted" />
     <option name="pluginJars">
       <list>
-        <option value="$PROJECT_DIR$/lint-rules/detekt-compose-0.4.4-all.jar" />
+        <option value="$USER_HOME$/lint-rules/detekt-compose-0.4.27-all.jar" />
       </list>
     </option>
+    <option name="treatAsErrors" value="true" />
   </component>
 </project>

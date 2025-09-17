@@ -33,6 +33,7 @@ internal fun HomeScreen(
     bpm: Int,
     animationEnd: Boolean,
     showStart: Boolean,
+    startStopEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -73,7 +74,8 @@ internal fun HomeScreen(
         }
         Button(
             onClick = onStartClick,
-            modifier = Modifier.wrapContentSize()
+            modifier = Modifier.wrapContentSize(),
+            enabled = startStopEnabled
         ) {
             Text(text = if (showStart) stringResource(R.string.start) else stringResource(R.string.stop))
         }
@@ -87,6 +89,7 @@ private fun HomeScreenPreview() {
         HomeScreen(
             onStartClick = { },
             showStart = true,
+            startStopEnabled = true,
             showAwaitingClient = true,
             bpm = 128,
             animationEnd = true
