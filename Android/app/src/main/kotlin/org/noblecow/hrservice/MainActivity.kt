@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import org.noblecow.hrservice.composables.HeartRateApp
 import org.noblecow.hrservice.ui.theme.HeartRateTheme
 
 internal class MainActivity : ComponentActivity() {

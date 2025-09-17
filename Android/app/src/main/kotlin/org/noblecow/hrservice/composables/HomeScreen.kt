@@ -1,4 +1,4 @@
-package org.noblecow.hrservice.ui
+package org.noblecow.hrservice.composables
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image

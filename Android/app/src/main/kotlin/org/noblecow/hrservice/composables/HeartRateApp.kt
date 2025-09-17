@@ -1,34 +1,21 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package org.noblecow.hrservice
+package org.noblecow.hrservice.composables
 
-import android.app.Activity.RESULT_OK
+import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -59,144 +45,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import org.noblecow.hrservice.R
+import org.noblecow.hrservice.WORKER_NAME
 import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.data.util.ANIMATION_MILLIS
 import org.noblecow.hrservice.data.util.DEFAULT_BPM
-import org.noblecow.hrservice.ui.HomeScreen
 import org.noblecow.hrservice.ui.MainViewModel
 import org.slf4j.LoggerFactory
-
-enum class HeartRateScreen(
-    @param:StringRes val title: Int
-) {
-    Home(title = R.string.app_name),
-    OpenSource(title = R.string.open_source)
-}
-
-@Composable
-fun HeartRateAppBar(
-    scrollBehavior: TopAppBarScrollBehavior,
-    currentScreen: HeartRateScreen,
-    canNavigateBack: Boolean,
-    navController: NavHostController,
-    onFakeBpmClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    if (currentScreen != HeartRateScreen.Home) {
-        NonHomeAppBar(
-            scrollBehavior = scrollBehavior,
-            currentScreen = currentScreen,
-            canNavigateBack = canNavigateBack,
-            navController = navController,
-            modifier = modifier
-        )
-    } else {
-        HomeAppBar(
-            scrollBehavior = scrollBehavior,
-            currentScreen = currentScreen,
-            canNavigateBack = canNavigateBack,
-            navController = navController,
-            onFakeBpmClick = onFakeBpmClick,
-            modifier = modifier
-        )
-    }
-}
-
-@Composable
-fun NonHomeAppBar(
-    scrollBehavior: TopAppBarScrollBehavior,
-    currentScreen: HeartRateScreen,
-    canNavigateBack: Boolean,
-    navController: NavHostController,
-    modifier: Modifier = Modifier
-) {
-    TopAppBar(
-        title = {
-            Text(
-                stringResource(currentScreen.title),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        },
-        scrollBehavior = scrollBehavior,
-        navigationIcon = {
-            if (canNavigateBack) {
-                IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back_button)
-                    )
-                }
-            }
-        },
-        modifier = modifier
-    )
-}
-
-@Composable
-internal fun HomeAppBar(
-    scrollBehavior: TopAppBarScrollBehavior,
-    currentScreen: HeartRateScreen,
-    canNavigateBack: Boolean,
-    navController: NavHostController,
-    onFakeBpmClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var menuExpanded by remember { mutableStateOf(false) }
-
-    CenterAlignedTopAppBar(
-        title = {
-            Text(
-                stringResource(currentScreen.title),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        },
-        actions = {
-            IconButton(onClick = { menuExpanded = !menuExpanded }) {
-                Icon(
-                    imageVector = Icons.Outlined.MoreVert,
-                    contentDescription = stringResource(R.string.menu)
-                )
-            }
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false }
-            ) {
-                DropdownMenuItem(
-                    onClick = {
-                        navController.navigate(HeartRateScreen.OpenSource.name)
-                        menuExpanded = false
-                    },
-                    text = {
-                        Text(stringResource(R.string.open_source))
-                    }
-                )
-                DropdownMenuItem(
-                    onClick = {
-                        onFakeBpmClick.invoke()
-                        menuExpanded = false
-                    },
-                    text = {
-                        Text(stringResource(R.string.toggle_fake_bpm))
-                    }
-                )
-            }
-        },
-        scrollBehavior = scrollBehavior,
-        navigationIcon = {
-            if (canNavigateBack) {
-                IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back_button)
-                    )
-                }
-            }
-        },
-        modifier = modifier
-    )
-}
 
 @Composable
 @Suppress("LongMethod", "CyclomaticComplexMethod")
@@ -216,8 +71,8 @@ internal fun HeartRateApp(
     ) { permissions ->
         viewModel.receivePermissions(permissions)
     }
-    val enableBluetoothLauncher = rememberLauncherForActivityResult(StartActivityForResult()) {
-        if (it.resultCode != RESULT_OK) {
+    val enableBluetoothLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode != Activity.RESULT_OK) {
             viewModel.userDeclinedBluetoothEnable()
         } else {
             viewModel.start()
@@ -280,7 +135,7 @@ internal fun HeartRateApp(
         var localBpmCount by remember { mutableIntStateOf(uiState.bpmCount) }
 
         Scaffold(
-            modifier = Modifier
+            modifier = Modifier.Companion
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = {
@@ -299,7 +154,7 @@ internal fun HeartRateApp(
             NavHost(
                 navController = navController,
                 startDestination = HeartRateScreen.Home.name,
-                modifier = Modifier
+                modifier = Modifier.Companion
                     .fillMaxSize()
                     // .verticalScroll(rememberScrollState())
                     .padding(innerPadding)
@@ -327,7 +182,7 @@ internal fun HeartRateApp(
                 }
                 composable(route = HeartRateScreen.OpenSource.name) {
                     val libraries by rememberLibraries(R.raw.aboutlibraries)
-                    LibrariesContainer(libraries, Modifier.fillMaxSize())
+                    LibrariesContainer(libraries, Modifier.Companion.fillMaxSize())
                 }
                 userMessage?.let {
                     scope.launch {
