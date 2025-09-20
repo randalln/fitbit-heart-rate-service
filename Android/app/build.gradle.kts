@@ -17,11 +17,12 @@
 
 import java.io.FileInputStream
 import java.util.Properties
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    // alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.detekt)
     alias(libs.plugins.ksp)
@@ -41,6 +42,84 @@ keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 
 ksp {
     arg("KOIN_CONFIG_CHECK", "true")
+}
+
+kotlin {
+    jvmToolchain(libs.versions.jvm.get().toInt())
+    compilerOptions {
+        allWarningsAsErrors = true
+    }
+
+    androidTarget()
+    /*
+    androidTarget {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+    }
+     */
+
+    sourceSets {
+        commonMain.dependencies { }
+        /*
+        val composeMain by creating {
+            dependsOn(commonMain.get())
+        }
+        androidMain.get().dependsOn(composeMain)
+         */
+        androidMain.dependencies {
+            implementation(project.dependencies.platform(libs.androidx.compose.bom))
+            implementation(libs.activity.compose)
+            implementation(libs.activity.ktx)
+            implementation(libs.androidx.compose.material3)
+            // debugImplementation(libs.androidx.compose.ui.tooling)
+            implementation(libs.androidx.compose.ui.tooling.preview)
+            // debugImplementation(libs.androidx.test.runner)
+            implementation(libs.material)
+            implementation(libs.navigation.compose)
+            implementation(libs.navigation.ui.ktx)
+            implementation(libs.work.runtime.ktx)
+            implementation(libs.androidx.compose.ui.test)
+
+            // Third-party libraries
+            implementation(libs.aboutlibraries.compose.m3)
+            implementation(libs.blessed.kotlin)
+            implementation(libs.timber)
+            implementation(libs.ktor.client.android)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.serialization.kotlinx)
+            implementation(libs.ktor.server.call.logging)
+            implementation(libs.ktor.server.content.negotiation)
+            implementation(libs.ktor.server.core)
+            implementation(libs.ktor.server.netty)
+            implementation(libs.ktor.server.status.pages)
+            implementation(libs.logback.android)
+            implementation(libs.slf4j.api)
+            // detektPlugins(libs.compose.rules.detekt)
+            implementation(project.dependencies.platform(libs.koin.bom))
+            implementation(libs.koin.android)
+            implementation(libs.koin.androidx.compose)
+            implementation(libs.koin.androidx.workmanager)
+            implementation(libs.koin.annotations)
+            // ksp(libs.koin.ksp.compiler)
+
+            /*
+            testImplementation(libs.junit)
+            testImplementation(libs.mockk.android)
+            testImplementation(libs.mockk.agent)
+            testImplementation(libs.kotlinx.coroutines.test)
+            testImplementation(libs.logback.classic)
+            testImplementation(libs.turbine)
+
+            androidTestImplementation(platform(libs.androidx.compose.bom))
+            androidTestImplementation(libs.androidx.compose.ui.test)
+            androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+            androidTestImplementation(libs.androidx.test.rules)
+            debugImplementation(libs.androidx.compose.ui.test.manifest)
+             */
+        }
+    }
 }
 
 android {
@@ -99,13 +178,15 @@ android {
             resources.excludes.add("META-INF/LICENSE*.md")
         }
     }
+    /*
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+     */
     kotlin {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            // jvmTarget.set(JvmTarget.JVM_17)
             allWarningsAsErrors = true
             freeCompilerArgs = listOf(
                 "-Xwhen-guards"
@@ -118,54 +199,7 @@ android {
 }
 
 dependencies {
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.activity.compose)
-    implementation(libs.activity.ktx)
-    implementation(libs.androidx.compose.material3)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.androidx.compose.ui.tooling.preview)
-    debugImplementation(libs.androidx.test.runner)
-    implementation(libs.material)
-    implementation(libs.navigation.compose)
-    implementation(libs.navigation.ui.ktx)
-    implementation(libs.work.runtime.ktx)
-    implementation(libs.androidx.compose.ui.test)
-
-    // Third-party libraries
-    implementation(libs.aboutlibraries.compose.m3)
-    implementation(libs.blessed.kotlin)
-    implementation(libs.timber)
-    implementation(libs.ktor.client.android)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.serialization.kotlinx)
-    implementation(libs.ktor.server.call.logging)
-    implementation(libs.ktor.server.content.negotiation)
-    implementation(libs.ktor.server.core)
-    implementation(libs.ktor.server.netty)
-    implementation(libs.ktor.server.status.pages)
-    implementation(libs.logback.android)
-    implementation(libs.slf4j.api)
-    detektPlugins(libs.compose.rules.detekt)
-    implementation(project.dependencies.platform(libs.koin.bom))
-    implementation(libs.koin.android)
-    implementation(libs.koin.androidx.compose)
-    implementation(libs.koin.androidx.workmanager)
-    implementation(libs.koin.annotations)
-    ksp(libs.koin.ksp.compiler)
-
-    testImplementation(libs.junit)
-    testImplementation(libs.mockk.android)
-    testImplementation(libs.mockk.agent)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.logback.classic)
-    testImplementation(libs.turbine)
-
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test)
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.test.rules)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    add("kspAndroid", libs.koin.ksp.compiler)
 }
 
 configurations.testImplementation {

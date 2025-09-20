@@ -5,9 +5,11 @@ activity-compose = "1.11.0"
 agp = "8.13.0"
 blessedKotlin = "3.0.9"
 compose-bom = "2025.09.00"
+compose-multiplatform = "1.8.0"
 compose-rules-detekt = "0.4.27"
 detekt = "1.23.8"
 junit = "4.13.2"
+jvm = "17"
 koin-annotations = "2.1.0"
 koin-bom = "4.1.1"
 kotlin = "2.2.10"
@@ -82,3 +84,5 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
