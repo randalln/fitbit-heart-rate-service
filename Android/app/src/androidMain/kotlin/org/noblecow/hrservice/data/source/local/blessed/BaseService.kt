@@ -38,7 +38,9 @@ internal open class BaseService(
         value: ByteArray?,
         characteristic: BluetoothGattCharacteristic
     ) {
-        peripheralManager.notifyCharacteristicChanged(value!!, characteristic)
+        value?.let {
+            peripheralManager.notifyCharacteristicChanged(value, characteristic)
+        }
     }
 
     fun noCentralsConnected(): Boolean = peripheralManager.connectedCentrals.isEmpty()
@@ -75,16 +77,19 @@ internal open class BaseService(
         central: BluetoothCentral,
         characteristic: BluetoothGattCharacteristic
     ): Boolean = false
+
     override fun onNotifyingDisabled(
         central: BluetoothCentral,
         characteristic: BluetoothGattCharacteristic
     ) = Unit
+
     override fun onNotificationSent(
         central: BluetoothCentral,
         value: ByteArray,
         characteristic: BluetoothGattCharacteristic,
         status: GattStatus
     ) = Unit
+
     override fun onCentralConnected(central: BluetoothCentral) = Unit
     override fun onCentralDisconnected(central: BluetoothCentral) = Unit
 

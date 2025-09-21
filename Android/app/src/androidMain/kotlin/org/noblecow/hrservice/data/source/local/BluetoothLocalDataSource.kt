@@ -37,7 +37,7 @@ internal interface BluetoothLocalDataSource {
     val advertisingState: Flow<AdvertisingState>
     val clientConnectedState: Flow<Boolean>
     fun getHardwareState(): HardwareState
-    fun getMissingPermissions(): Array<String>
+    fun getMissingPermissions(): Array<out String>
     fun startAdvertising()
     fun stop()
     fun notifyHeartRate(bpm: Int): Unit?
@@ -267,8 +267,8 @@ internal class BluetoothLocalDataSourceImpl(
     }
 
     private fun initialize() {
-        bluetoothManager?.apply {
-            adapter.name = Build.MODEL
+        bluetoothManager?.let {
+            it.adapter.name = Build.MODEL
         }
         if (peripheralManager == null) { // Nulled on stopping
             peripheralManager = bluetoothManager?.let {
@@ -326,8 +326,8 @@ internal class BluetoothLocalDataSourceImpl(
         }
     }
 
-    override fun getMissingPermissions(): Array<String> = peripheralManager?.getMissingPermissions()
-        ?: emptyArray()
+    @Suppress("UseOrEmpty")
+    override fun getMissingPermissions(): Array<out String> = peripheralManager?.getMissingPermissions().orEmpty()
 
     override fun notifyHeartRate(bpm: Int) = heartRateService?.notifyHeartRate(bpm)
 }

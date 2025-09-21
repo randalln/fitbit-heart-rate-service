@@ -44,7 +44,7 @@ internal interface ServicesTransitionState
 internal interface MainRepository {
     fun getAppStateStream(): StateFlow<AppState>
     fun getHardwareState(): HardwareState
-    fun getMissingPermissions(): Array<String>
+    fun getMissingPermissions(): Array<out String>
     fun permissionsGranted(): Boolean
     suspend fun startServices()
     fun stopServices()

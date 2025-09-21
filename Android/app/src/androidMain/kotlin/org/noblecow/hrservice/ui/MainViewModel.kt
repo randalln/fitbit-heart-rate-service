@@ -98,8 +98,7 @@ internal class MainViewModel(
         val missingNotificationPerms = permissionsHelper.getMissingNotificationsPermissions()
 
         if (missingNotificationPerms.isNotEmpty() || !mainRepository.permissionsGranted()) {
-            val permissionsNeeded = mainRepository.getMissingPermissions() +
-                missingNotificationPerms
+            val permissionsNeeded = missingNotificationPerms + mainRepository.getMissingPermissions()
             permissionsRequested.update { permissionsNeeded.toList() }
         } else {
             confirmBluetoothState()

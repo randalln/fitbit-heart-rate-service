@@ -63,7 +63,7 @@ class MainViewModelTest {
         every { permissionsHelper.getMissingNotificationsPermissions() } returns
             notificationPermissions
         viewModel = MainViewModel(mainRepository, permissionsHelper)
-        val allPermissions = bluetoothPermissions + notificationPermissions
+        val allPermissions = notificationPermissions + bluetoothPermissions
 
         viewModel.mainUiState.test {
             assertEquals(MainUiState(bpmCount = 1), awaitItem())
