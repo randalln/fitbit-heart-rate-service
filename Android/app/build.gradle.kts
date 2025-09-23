@@ -15,10 +15,10 @@
  */
 @file:Suppress("UnstableApiUsage")
 
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import java.io.FileInputStream
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 
 plugins {
     alias(libs.plugins.android.application)
@@ -60,7 +60,7 @@ kotlin {
     compilerOptions {
         allWarningsAsErrors = true
     }
-
+    jvm() // https://youtrack.jetbrains.com/issue/KT-52664/Multiplatform-projects-with-a-single-target
     androidTarget {
         /*
         compilerOptions {
@@ -90,13 +90,12 @@ kotlin {
     }
 
     sourceSets {
-        commonMain.dependencies { }
-        /*
-        val composeMain by creating {
-            dependsOn(commonMain.get())
+        commonMain.dependencies {
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(project.dependencies.platform(libs.koin.bom))
+            implementation(libs.koin.core)
+            api(libs.koin.annotations)
         }
-        androidMain.get().dependsOn(composeMain)
-         */
         androidMain.dependencies {
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
             implementation(libs.activity.compose)
@@ -128,8 +127,17 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
             implementation(libs.koin.androidx.workmanager)
-            implementation(libs.koin.annotations)
         }
+
+        jvmMain.dependencies {
+            implementation(project.dependencies.platform(libs.androidx.compose.bom))
+            api(libs.androidx.compose.runtime)
+        }
+    }
+
+    // KSP Common sourceSet
+    sourceSets.named("commonMain").configure {
+        kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
     }
 }
 
@@ -208,6 +216,7 @@ android {
 }
 
 dependencies {
+    add("kspCommonMainMetadata", libs.koin.ksp.compiler)
     add("kspAndroid", libs.koin.ksp.compiler)
     detektPlugins(libs.compose.rules.detekt)
     ktlintRuleset(libs.compose.rules.ktlint)
@@ -215,6 +224,17 @@ dependencies {
 
 configurations.testImplementation {
     exclude(module = "logback-android")
+}
+
+// Trigger Common Metadata Generation from Native tasks
+tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
+    dependsOn("kspCommonMainKotlinMetadata")
+}
+tasks.matching {
+    it.name.startsWith("runKtlintCheckOverCommonMainSourceSet") &&
+        it.name != "kspCommonMainKotlinMetadata"
+}.configureEach {
+    dependsOn("kspCommonMainKotlinMetadata")
 }
 
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {

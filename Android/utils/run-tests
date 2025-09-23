@@ -1,3 +1,12 @@
 #!/bin/bash
 
-./gradlew --rerun-tasks detektAndroidDebug ktlintCheck testDebugUnitTest connectedAndroidTest
+RERUN_TASKS=""
+
+while getopts "r" opt; do
+    case "$opt" in
+	r) RERUN_TASKS="--rerun-tasks"
+	   ;;
+    esac
+done
+
+./gradlew ${RERUN_TASKS} detektAndroidDebug ktlintCheck testDebugUnitTest connectedAndroidTest
