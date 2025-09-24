@@ -69,24 +69,6 @@ kotlin {
          */
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
-
-        dependencies {
-            debugImplementation(libs.androidx.compose.ui.tooling)
-            debugImplementation(libs.androidx.test.runner)
-
-            testImplementation(libs.junit)
-            testImplementation(libs.mockk.android)
-            testImplementation(libs.mockk.agent)
-            testImplementation(libs.kotlinx.coroutines.test)
-            testImplementation(libs.logback.classic)
-            testImplementation(libs.turbine)
-
-            androidTestImplementation(platform(libs.androidx.compose.bom))
-            androidTestImplementation(libs.androidx.compose.ui.test)
-            androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-            androidTestImplementation(libs.androidx.test.rules)
-            debugImplementation(libs.androidx.compose.ui.test.manifest)
-        }
     }
 
     sourceSets {
@@ -128,7 +110,23 @@ kotlin {
             implementation(libs.koin.androidx.compose)
             implementation(libs.koin.androidx.workmanager)
         }
-
+        androidUnitTest.dependencies {
+            implementation(libs.androidx.compose.ui.tooling)
+            implementation(libs.androidx.test.runner)
+            implementation(libs.junit)
+            implementation(libs.mockk.android)
+            implementation(libs.mockk.agent)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.logback.classic)
+            implementation(libs.turbine)
+        }
+        androidInstrumentedTest.dependencies {
+            implementation(project.dependencies.platform(libs.androidx.compose.bom))
+            implementation(libs.androidx.compose.ui.test)
+            implementation(libs.androidx.compose.ui.test.junit4)
+            implementation(libs.androidx.test.rules)
+            implementation(libs.androidx.compose.ui.test.manifest)
+        }
         jvmMain.dependencies {
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
             api(libs.androidx.compose.runtime)
@@ -196,6 +194,7 @@ android {
         packaging {
             resources.excludes.add("META-INF/LICENSE*.md")
         }
+        unitTests.isReturnDefaultValues = true
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -209,9 +208,6 @@ android {
                 "-Xwhen-guards"
             )
         }
-    }
-    testOptions {
-        unitTests.isReturnDefaultValues = true
     }
 }
 
