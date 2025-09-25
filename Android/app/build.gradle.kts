@@ -18,18 +18,21 @@
 import java.io.FileInputStream
 import java.util.Properties
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.compose.multiplatform)
-    alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.detekt)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.ktlint.gradle)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.aboutLibs)
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.compose.hotreload)
+    alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.serialization)
+    // alias(libs.plugins.ksp)
+    alias(libs.plugins.ktlint.gradle)
+    alias(libs.plugins.metro)
 }
 
 detekt {
@@ -51,32 +54,58 @@ val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
 keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 
-ksp {
-    arg("KOIN_CONFIG_CHECK", "true")
-}
-
 kotlin {
     jvmToolchain(libs.versions.jvm.get().toInt())
     compilerOptions {
         allWarningsAsErrors = true
+        freeCompilerArgs.add("-Xexpect-actual-classes")
     }
-    jvm() // https://youtrack.jetbrains.com/issue/KT-52664/Multiplatform-projects-with-a-single-target
+
+    // jvm()
+
     androidTarget {
-        /*
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
-         */
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
     }
 
+    listOf(
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "ComposeApp"
+            isStatic = true
+        }
+    }
+
     sourceSets {
         commonMain.dependencies {
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(libs.material.icons.core)
+            implementation(compose.ui)
+            implementation(compose.components.resources)
+            implementation(compose.components.uiToolingPreview)
+            // implementation(libs.androidx.lifecycle.viewmodelCompose)
+            // implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.coroutines.core)
-            implementation(project.dependencies.platform(libs.koin.bom))
-            implementation(libs.koin.core)
-            api(libs.koin.annotations)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx)
+            implementation(libs.ktor.server.cio)
+            implementation(libs.ktor.server.content.negotiation)
+            implementation(libs.ktor.server.core)
+            implementation(libs.ktor.server.status.pages)
+            implementation(libs.kermit)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
         }
         androidMain.dependencies {
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
@@ -94,21 +123,12 @@ kotlin {
             implementation(libs.aboutlibraries.compose.m3)
             implementation(libs.blessed.kotlin)
             implementation(libs.timber)
-            implementation(libs.ktor.client.android)
-            implementation(libs.ktor.client.content.negotiation)
-            implementation(libs.ktor.client.core)
-            implementation(libs.ktor.serialization.kotlinx)
+            implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.ktor.client.okhttp)
             implementation(libs.ktor.server.call.logging)
-            implementation(libs.ktor.server.content.negotiation)
-            implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.netty)
-            implementation(libs.ktor.server.status.pages)
             implementation(libs.logback.android)
             implementation(libs.slf4j.api)
-            implementation(project.dependencies.platform(libs.koin.bom))
-            implementation(libs.koin.android)
-            implementation(libs.koin.androidx.compose)
-            implementation(libs.koin.androidx.workmanager)
         }
         androidUnitTest.dependencies {
             implementation(libs.androidx.compose.ui.tooling)
@@ -127,22 +147,33 @@ kotlin {
             implementation(libs.androidx.test.rules)
             implementation(libs.androidx.compose.ui.test.manifest)
         }
-        jvmMain.dependencies {
-            implementation(project.dependencies.platform(libs.androidx.compose.bom))
-            api(libs.androidx.compose.runtime)
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+            implementation(libs.ktor.server.cio)
+            implementation(libs.ktor.server.core)
         }
+        /*
+        jvmMain.dependencies {
+            implementation(compose.desktop.currentOs)
+            implementation(libs.kotlinx.coroutines.swing)
+            // implementation(project.dependencies.platform(libs.androidx.compose.bom))
+            // api(compose.runtime)
+        }
+         */
     }
 
     // KSP Common sourceSet
+    /*
     sourceSets.named("commonMain").configure {
         kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
     }
+     */
 }
 
 android {
     namespace = "org.noblecow.hrservice"
     compileSdk = 36
-    ndkVersion = "29.0.14033849"
+    ndkVersion = "29.0.14206865"
 
     defaultConfig {
         applicationId = "org.noblecow.hrservice"
@@ -205,17 +236,18 @@ android {
             // jvmTarget.set(JvmTarget.JVM_17)
             allWarningsAsErrors = true
             freeCompilerArgs = listOf(
-                "-Xwhen-guards"
+                "-Xwhen-guards",
+                "-Xannotation-default-target=param-property",
+                "-Xexpect-actual-classes"
             )
         }
     }
 }
 
 dependencies {
-    add("kspCommonMainMetadata", libs.koin.ksp.compiler)
-    add("kspAndroid", libs.koin.ksp.compiler)
     detektPlugins(libs.compose.rules.detekt)
     ktlintRuleset(libs.compose.rules.ktlint)
+    debugImplementation(compose.uiTooling)
 }
 
 configurations.testImplementation {
@@ -223,9 +255,12 @@ configurations.testImplementation {
 }
 
 // Trigger Common Metadata Generation from Native tasks
+/*
 tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
     dependsOn("kspCommonMainKotlinMetadata")
 }
+*/
+
 tasks.matching {
     it.name.startsWith("runKtlintCheckOverCommonMainSourceSet") &&
         it.name != "kspCommonMainKotlinMetadata"

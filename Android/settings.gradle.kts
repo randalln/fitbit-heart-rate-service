@@ -17,5 +17,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Heart Rate Monitor"
+rootProject.name = "HeartRateMonitor"
 include(":app")

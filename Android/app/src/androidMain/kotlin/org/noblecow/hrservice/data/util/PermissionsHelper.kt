@@ -4,9 +4,9 @@ import android.Manifest
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
-import org.koin.core.annotation.Single
+import dev.zacsweers.metro.Inject
 
-@Single
+@Inject
 internal class PermissionsHelper(
     val context: Context
 ) {

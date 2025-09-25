@@ -44,13 +44,13 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 import org.noblecow.hrservice.R
 import org.noblecow.hrservice.WORKER_NAME
 import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.data.util.ANIMATION_MILLIS
 import org.noblecow.hrservice.data.util.DEFAULT_BPM
-import org.noblecow.hrservice.ui.MainViewModel
+import org.noblecow.hrservice.viewmodel.MainViewModel
+import org.noblecow.hrservice.viewmodel.metroViewModel
 import org.slf4j.LoggerFactory
 
 @Composable
@@ -60,9 +60,9 @@ internal fun HeartRateApp(
     workState: StateFlow<List<WorkInfo>?>,
     workManager: WorkManager,
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController(),
-    viewModel: MainViewModel = koinViewModel()
+    navController: NavHostController = rememberNavController()
 ) {
+    val viewModel = metroViewModel<MainViewModel>()
     val logger = LoggerFactory.getLogger("HeartRateApp")
     val uiState by viewModel.mainUiState.collectAsState()
     val workerState = workState.collectAsState()

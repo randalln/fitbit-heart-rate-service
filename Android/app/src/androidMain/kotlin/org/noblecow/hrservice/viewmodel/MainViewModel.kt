@@ -1,7 +1,9 @@
-package org.noblecow.hrservice.ui
+package org.noblecow.hrservice.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -9,13 +11,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import org.koin.android.annotation.KoinViewModel
 import org.noblecow.hrservice.R
 import org.noblecow.hrservice.data.repository.MainRepository
 import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.data.source.local.HardwareState
 import org.noblecow.hrservice.data.util.DEFAULT_BPM
 import org.noblecow.hrservice.data.util.PermissionsHelper
+import org.noblecow.hrservice.di.ViewModelScope
 import org.slf4j.LoggerFactory
 
 internal data class MainUiState(
@@ -33,7 +35,9 @@ private const val STOP_TIMEOUT_MILLIS = 5000L
 private const val TAG = "MainViewModel"
 
 @Suppress("TooManyFunctions")
-@KoinViewModel
+@ContributesIntoMap(ViewModelScope::class)
+@ViewModelKey(MainViewModel::class)
+@Inject
 internal class MainViewModel(
     private val mainRepository: MainRepository,
     private val permissionsHelper: PermissionsHelper

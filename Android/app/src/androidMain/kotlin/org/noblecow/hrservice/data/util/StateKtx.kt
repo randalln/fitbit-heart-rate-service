@@ -1,7 +1,7 @@
 package org.noblecow.hrservice.data.util
 
 import org.noblecow.hrservice.data.repository.AppState
-import org.noblecow.hrservice.ui.MainUiState
+import org.noblecow.hrservice.viewmodel.MainUiState
 import org.slf4j.LoggerFactory
 
 internal fun MainUiState.printDiff(tag: String, otherState: MainUiState) {

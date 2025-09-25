@@ -1,5 +1,12 @@
 package org.noblecow.hrservice.data.repository
 
+import co.touchlab.kermit.Logger
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Inject
+import heartratemonitor.app.generated.resources.Res
+import heartratemonitor.app.generated.resources.error_advertise
+import heartratemonitor.app.generated.resources.error_web_server
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -11,8 +18,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.Single
-import org.noblecow.hrservice.R
+import org.jetbrains.compose.resources.StringResource
 import org.noblecow.hrservice.data.source.local.AdvertisingState
 import org.noblecow.hrservice.data.source.local.BluetoothLocalDataSource
 import org.noblecow.hrservice.data.source.local.FakeBpmLocalDataSource
@@ -21,7 +27,6 @@ import org.noblecow.hrservice.data.source.local.WebServerLocalDataSource
 import org.noblecow.hrservice.data.source.local.WebServerState
 import org.noblecow.hrservice.data.util.DEFAULT_BPM
 import org.noblecow.hrservice.di.IoDispatcher
-import org.slf4j.LoggerFactory
 
 internal data class AppState(
     val bpm: Int = DEFAULT_BPM,
@@ -35,7 +40,8 @@ internal sealed class ServicesState {
     data object Stopping : ServicesState(), ServicesTransitionState
     data object Stopped : ServicesState()
     data class Error(
-        val id: Int
+        // val id: Int
+        val text: StringResource
     ) : ServicesState()
 }
 
@@ -54,7 +60,8 @@ internal interface MainRepository {
 private const val TAG = "MainRepositoryImpl"
 
 @Suppress("TooManyFunctions")
-@Single
+@ContributesBinding(AppScope::class)
+@Inject
 internal class MainRepositoryImpl(
     private val bluetoothLocalDataSource: BluetoothLocalDataSource,
     private val webServerLocalDataSource: WebServerLocalDataSource,
@@ -64,7 +71,9 @@ internal class MainRepositoryImpl(
 
     private var fakeBpmJob: Job? = null
     private val localScope: CoroutineScope = CoroutineScope(Job() + dispatcher)
-    private val logger = LoggerFactory.getLogger(TAG)
+
+    // private val logger = LoggerFactory.getLogger(TAG)
+    private val logger = Logger.withTag(TAG)
     private val toggleSignalFlow = MutableSharedFlow<Boolean>()
     private var previousServicesState: ServicesState? = null
 
@@ -102,10 +111,10 @@ internal class MainRepositoryImpl(
         webServerState: WebServerState
     ): ServicesState? = when {
         advertisingState is AdvertisingState.Failure ->
-            ServicesState.Error(R.string.error_advertise)
+            ServicesState.Error(Res.string.error_advertise)
 
         webServerState.error != null ->
-            ServicesState.Error(R.string.error_web_server)
+            ServicesState.Error(Res.string.error_web_server)
 
         else -> null
     }
@@ -170,7 +179,8 @@ internal class MainRepositoryImpl(
             bluetoothLocalDataSource.startAdvertising()
             webServerLocalDataSource.start()
         } catch (e: IllegalStateException) {
-            logger.error(e.localizedMessage, e)
+            // logger.error(e.localizedMessage, e)
+            logger.e(e.message ?: "", e)
         }
     }
 
@@ -179,7 +189,8 @@ internal class MainRepositoryImpl(
             check(servicesState.value == ServicesState.Started) { servicesState.value }
             stopAllServices()
         } catch (e: IllegalStateException) {
-            logger.error(e.localizedMessage, e)
+            // logger.error(e.localizedMessage, e)
+            logger.e(e.message ?: "", e)
         }
     }
 
@@ -196,8 +207,9 @@ internal class MainRepositoryImpl(
         fakeBpmJob = localScope.launch {
             try {
                 fakeBpmLocalDataSource.run()
-            } catch (error: Throwable) {
-                logger.error(error.localizedMessage, error)
+            } catch (e: Throwable) {
+                // logger.error(error.localizedMessage, error)
+                logger.e(e.message ?: "", e)
             }
         }
         true

@@ -19,47 +19,26 @@ import com.welie.blessed.BluetoothPeripheralManager
 import com.welie.blessed.BluetoothPeripheralManagerCallback
 import com.welie.blessed.GattStatus
 import com.welie.blessed.ReadResponse
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.Single
 import org.noblecow.hrservice.data.source.local.blessed.HeartRateService
 import org.noblecow.hrservice.data.source.local.blessed.Service
 import org.noblecow.hrservice.di.DefaultDispatcher
 
-private const val TAG = "BluetoothLocalDataSource"
-
-internal interface BluetoothLocalDataSource {
-    val advertisingState: Flow<AdvertisingState>
-    val clientConnectedState: Flow<Boolean>
-    fun getHardwareState(): HardwareState
-    fun getMissingPermissions(): Array<out String>
-    fun startAdvertising()
-    fun stop()
-    fun notifyHeartRate(bpm: Int): Unit?
-    fun permissionsGranted(): Boolean
-}
-
-internal sealed class AdvertisingState {
-    data object Started : AdvertisingState()
-    data object Stopped : AdvertisingState()
-    data class Failure(
-        val error: AdvertiseError
-    ) : AdvertisingState()
-}
-
-internal enum class HardwareState {
-    DISABLED,
-    HARDWARE_UNSUITABLE,
-    READY
-}
+private const val TAG = "BluetoothLocalDataSourceImpl"
 
 @SuppressLint("MissingPermission")
-@Single
+@ContributesBinding(AppScope::class)
+@Inject
+@SingleIn(AppScope::class)
 internal class BluetoothLocalDataSourceImpl(
     private val context: Context,
     @DefaultDispatcher dispatcher: CoroutineDispatcher
@@ -215,7 +194,7 @@ internal class BluetoothLocalDataSourceImpl(
             override fun onAdvertiseFailure(advertiseError: AdvertiseError) {
                 localScope.launch {
                     Log.e(TAG, "${advertiseError.name} ${advertiseError.value}")
-                    _advertisingState.emit(AdvertisingState.Failure(advertiseError))
+                    _advertisingState.emit(AdvertisingState.Failure)
                 }
             }
         }
@@ -247,7 +226,7 @@ internal class BluetoothLocalDataSourceImpl(
 
     /**
      * Verify the level of Bluetooth support provided by the hardware.
-     * @param bluetoothAdapter System [BluetoothAdapter].
+     * @param bluetoothAdapter System [android.bluetooth.BluetoothAdapter].
      * @return true if Bluetooth is properly supported, false otherwise.
      */
     private fun checkBluetoothSupport(bluetoothAdapter: BluetoothAdapter?): Boolean {
@@ -314,7 +293,7 @@ internal class BluetoothLocalDataSourceImpl(
                     .build()
                 val advertiseData = AdvertiseData.Builder()
                     .setIncludeTxPowerLevel(true)
-                    .addServiceUuid(ParcelUuid(HeartRateService.HRS_SERVICE_UUID))
+                    .addServiceUuid(ParcelUuid(HeartRateService.Companion.HRS_SERVICE_UUID))
                     .build()
                 val scanResponse = AdvertiseData.Builder()
                     .setIncludeDeviceName(true)

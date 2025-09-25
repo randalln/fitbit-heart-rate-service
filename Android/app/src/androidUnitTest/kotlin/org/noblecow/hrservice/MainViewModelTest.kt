@@ -15,8 +15,8 @@ import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.data.source.local.HardwareState
 import org.noblecow.hrservice.data.util.FAKE_BPM_START
 import org.noblecow.hrservice.data.util.PermissionsHelper
-import org.noblecow.hrservice.ui.MainUiState
-import org.noblecow.hrservice.ui.MainViewModel
+import org.noblecow.hrservice.viewmodel.MainUiState
+import org.noblecow.hrservice.viewmodel.MainViewModel
 
 class MainViewModelTest {
     @get:Rule

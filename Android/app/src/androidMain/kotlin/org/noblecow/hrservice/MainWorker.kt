@@ -14,17 +14,24 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.binding
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
-import org.koin.android.annotation.KoinWorker
 import org.noblecow.hrservice.data.repository.AppState
 import org.noblecow.hrservice.data.repository.MainRepository
 import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.data.util.DEFAULT_BPM
 import org.noblecow.hrservice.di.IoDispatcher
+import org.noblecow.hrservice.di.MetroWorkerFactory
+import org.noblecow.hrservice.di.WorkerKey
 import org.slf4j.LoggerFactory
 
 private const val CHANNEL_ID = "channel_id_1"
@@ -32,10 +39,10 @@ private const val NOTIFICATION_ID = 0
 private const val TAG = "MainWorker"
 internal const val WORKER_NAME = "mainWorker"
 
-@KoinWorker
+@AssistedInject
 internal class MainWorker(
     context: Context,
-    params: WorkerParameters,
+    @Assisted params: WorkerParameters,
     private val mainRepository: MainRepository,
     @IoDispatcher dispatcher: CoroutineDispatcher
 ) : CoroutineWorker(context, params) {
@@ -164,4 +171,12 @@ internal class MainWorker(
             )
         }
     }
+
+    @WorkerKey(MainWorker::class)
+    @ContributesIntoMap(
+        AppScope::class,
+        binding = binding<MetroWorkerFactory.WorkerInstanceFactory<*>>()
+    )
+    @AssistedFactory
+    abstract class Factory : MetroWorkerFactory.WorkerInstanceFactory<MainWorker>
 }

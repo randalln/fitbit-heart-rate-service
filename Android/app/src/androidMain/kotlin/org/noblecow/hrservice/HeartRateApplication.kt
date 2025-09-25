@@ -1,24 +1,37 @@
-@file:Suppress("ktlint:standard:no-wildcard-imports", "WildcardImport")
 package org.noblecow.hrservice
 
 import android.app.Application
-import org.koin.android.ext.koin.androidContext
-import org.koin.android.ext.koin.androidLogger
-import org.koin.androidx.workmanager.koin.workManagerFactory
-import org.koin.core.context.startKoin
-import org.koin.ksp.generated.*
-import org.noblecow.hrservice.di.AppModule
+import androidx.work.Configuration
+import dev.zacsweers.metro.createGraphFactory
+import org.noblecow.hrservice.di.AndroidAppGraph
 
-internal class HeartRateApplication : Application() {
+internal class HeartRateApplication :
+    Application(),
+    Configuration.Provider {
+
+    val appGraph by lazy { createGraphFactory<AndroidAppGraph.Factory>().create(application = this) }
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder().setWorkerFactory(appGraph.workerFactory).build()
+
+    /*
     override fun onCreate() {
         super.onCreate()
 
         // Initialize Koin
+        /*
         startKoin {
             androidLogger()
             androidContext(this@HeartRateApplication)
             workManagerFactory()
             modules(AppModule().module)
         }
+     */
+        initKoin {
+            androidLogger()
+            androidContext(this@HeartRateApplication)
+            workManagerFactory()
+        }
     }
+     */
 }
