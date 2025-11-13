@@ -19,10 +19,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavHostController
-import org.noblecow.hrservice.R
+import heartratemonitor.composeapp.generated.resources.Res
+import heartratemonitor.composeapp.generated.resources.back_button
+import heartratemonitor.composeapp.generated.resources.menu
+import heartratemonitor.composeapp.generated.resources.open_source
+import heartratemonitor.composeapp.generated.resources.toggle_fake_bpm
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun HomeAppBar(
@@ -38,7 +42,7 @@ internal fun HomeAppBar(
     CenterAlignedTopAppBar(
         title = {
             Text(
-                stringResource(currentScreen.title),
+                stringResource(currentScreen.titleRes),
                 maxLines = 1,
                 overflow = TextOverflow.Companion.Ellipsis
             )
@@ -47,7 +51,7 @@ internal fun HomeAppBar(
             IconButton(onClick = { menuExpanded = !menuExpanded }) {
                 Icon(
                     imageVector = Icons.Outlined.MoreVert,
-                    contentDescription = stringResource(R.string.menu)
+                    contentDescription = stringResource(Res.string.menu)
                 )
             }
             DropdownMenu(
@@ -60,7 +64,7 @@ internal fun HomeAppBar(
                         menuExpanded = false
                     },
                     text = {
-                        Text(stringResource(R.string.open_source))
+                        Text(stringResource(Res.string.open_source))
                     }
                 )
                 DropdownMenuItem(
@@ -69,7 +73,7 @@ internal fun HomeAppBar(
                         menuExpanded = false
                     },
                     text = {
-                        Text(stringResource(R.string.toggle_fake_bpm))
+                        Text(stringResource(Res.string.toggle_fake_bpm))
                     }
                 )
             }
@@ -80,7 +84,7 @@ internal fun HomeAppBar(
                 IconButton(onClick = { navController.navigateUp() }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back_button)
+                        contentDescription = stringResource(Res.string.back_button)
                     )
                 }
             }

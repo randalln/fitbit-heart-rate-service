@@ -18,22 +18,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.noblecow.hrservice.R
+import heartratemonitor.composeapp.generated.resources.Res
+import heartratemonitor.composeapp.generated.resources.awaiting_client
+import heartratemonitor.composeapp.generated.resources.ic_heart
+import heartratemonitor.composeapp.generated.resources.start
+import heartratemonitor.composeapp.generated.resources.stop
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.noblecow.hrservice.ui.theme.HeartRateTheme
 
 @Composable
 internal fun HomeScreen(
     onStartClick: () -> Unit,
+    onStopClick: () -> Unit,
     showAwaitingClient: Boolean,
     bpm: Int,
     animationEnd: Boolean,
     showStart: Boolean,
-    startStopEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -44,7 +48,7 @@ internal fun HomeScreen(
             .padding(8.dp)
     ) {
         Text(
-            text = stringResource(R.string.awaiting_client),
+            text = stringResource(Res.string.awaiting_client),
             color = Color.White,
             modifier = Modifier.alpha(
                 if (showAwaitingClient) 1f else 0f
@@ -60,7 +64,7 @@ internal fun HomeScreen(
             )
 
             Image(
-                painter = painterResource(id = R.drawable.ic_heart),
+                painter = painterResource(Res.drawable.ic_heart),
                 modifier = Modifier
                     .matchParentSize()
                     .scale(heartScale),
@@ -72,12 +76,20 @@ internal fun HomeScreen(
                 color = Color.White
             )
         }
-        Button(
-            onClick = onStartClick,
-            modifier = Modifier.wrapContentSize(),
-            enabled = startStopEnabled
-        ) {
-            Text(text = if (showStart) stringResource(R.string.start) else stringResource(R.string.stop))
+        if (showStart) {
+            Button(
+                onClick = onStartClick,
+                modifier = Modifier.wrapContentSize()
+            ) {
+                Text(text = stringResource(Res.string.start))
+            }
+        } else {
+            Button(
+                onClick = onStopClick,
+                modifier = Modifier.wrapContentSize()
+            ) {
+                Text(text = stringResource(Res.string.stop))
+            }
         }
     }
 }
@@ -88,8 +100,8 @@ private fun HomeScreenPreview() {
     HeartRateTheme {
         HomeScreen(
             onStartClick = { },
+            onStopClick = { },
             showStart = true,
-            startStopEnabled = true,
             showAwaitingClient = true,
             bpm = 128,
             animationEnd = true

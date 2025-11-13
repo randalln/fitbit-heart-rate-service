@@ -1,11 +1,11 @@
 package org.noblecow.hrservice.data.util
 
+import co.touchlab.kermit.Logger
 import org.noblecow.hrservice.data.repository.AppState
 import org.noblecow.hrservice.viewmodel.MainUiState
-import org.slf4j.LoggerFactory
 
 internal fun MainUiState.printDiff(tag: String, otherState: MainUiState) {
-    val logger = LoggerFactory.getLogger(tag)
+    val logger = Logger.withTag(tag)
 
     val diff = buildString {
         if (this@printDiff.bpm != otherState.bpm) {
@@ -27,10 +27,6 @@ internal fun MainUiState.printDiff(tag: String, otherState: MainUiState) {
             append("servicesState: ${this@printDiff.servicesState} -> ")
             append("${otherState.servicesState}\n")
         }
-        if (this@printDiff.startAndroidService != otherState.startAndroidService) {
-            append("startAndroidService: ${this@printDiff.startAndroidService} -> ")
-            append("${otherState.startAndroidService}\n")
-        }
         if (this@printDiff.userMessage != otherState.userMessage) {
             append(
                 "userMessage: ${this@printDiff.userMessage} -> ${otherState.userMessage}\n"
@@ -38,12 +34,12 @@ internal fun MainUiState.printDiff(tag: String, otherState: MainUiState) {
         }
     }
     if (diff.isNotEmpty()) {
-        logger.debug("state diff -- $diff")
+        logger.d("state diff -- $diff")
     }
 }
 
 internal fun AppState.printDiff(tag: String, otherState: AppState) {
-    val logger = LoggerFactory.getLogger(tag)
+    val logger = Logger.withTag(tag)
 
     val diff = buildString {
         if (this@printDiff.bpm != otherState.bpm) {
@@ -58,6 +54,6 @@ internal fun AppState.printDiff(tag: String, otherState: AppState) {
         }
     }
     if (diff.isNotEmpty()) {
-        logger.debug("state diff -- $diff")
+        logger.d("state diff -- $diff")
     }
 }

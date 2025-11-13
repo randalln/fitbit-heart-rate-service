@@ -8,6 +8,4 @@ import kotlin.reflect.KClass
 @MapKey
 @Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ReceiverKey(
-    val value: KClass<out BroadcastReceiver>
-)
+annotation class ReceiverKey(val value: KClass<out BroadcastReceiver>)

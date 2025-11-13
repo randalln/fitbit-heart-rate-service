@@ -13,6 +13,7 @@ import dev.zacsweers.metro.Provider
 import dev.zacsweers.metro.Provides
 import kotlin.reflect.KClass
 import org.noblecow.hrservice.viewmodel.ViewModelGraph
+import org.noblecow.hrservice.worker.WorkerCoordinator
 
 @DependencyGraph(
     AppScope::class,
@@ -21,10 +22,6 @@ import org.noblecow.hrservice.viewmodel.ViewModelGraph
 internal interface AndroidAppGraph :
     AppGraph,
     ViewModelGraph.Factory {
-    // @Provides
-    // fun provideFoo(): Foo = AndroidFoo()
-    // @Binds
-    // val AndroidFoo.bind: Foo
 
     /**
      * A multibinding map of activity classes to their providers accessible for
@@ -33,7 +30,7 @@ internal interface AndroidAppGraph :
     @Multibinds
     val activityProviders: Map<KClass<out Activity>, Provider<Activity>>
 
-    val workManager: WorkManager
+    val workerCoordinator: WorkerCoordinator
 
     @Provides
     fun providesWorkManager(application: Context): WorkManager = WorkManager.getInstance(application)
@@ -43,6 +40,9 @@ internal interface AndroidAppGraph :
         Map<KClass<out ListenableWorker>, Provider<MetroWorkerFactory.WorkerInstanceFactory<*>>>
 
     val workerFactory: MetroWorkerFactory
+
+    @Multibinds
+    val receiverProviders: Map<KClass<out BroadcastReceiver>, Provider<BroadcastReceiver>>
 
     @Provides
     fun provideApplicationContext(application: Application): Context = application

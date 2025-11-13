@@ -12,7 +12,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.ParcelUuid
-import android.util.Log
+import co.touchlab.kermit.Logger
 import com.welie.blessed.AdvertiseError
 import com.welie.blessed.BluetoothCentral
 import com.welie.blessed.BluetoothPeripheralManager
@@ -26,8 +26,14 @@ import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.noblecow.hrservice.data.source.local.blessed.HeartRateService
 import org.noblecow.hrservice.data.source.local.blessed.Service
@@ -35,31 +41,62 @@ import org.noblecow.hrservice.di.DefaultDispatcher
 
 private const val TAG = "BluetoothLocalDataSourceImpl"
 
+/**
+ * Bluetooth Low Energy peripheral implementation for advertising heart rate data.
+ *
+ * This class manages BLE advertising and GATT server operations to broadcast heart rate
+ * measurements to connected centrals using the standard Heart Rate Service profile (0x180D).
+ *
+ * **Thread Safety:** All state updates are dispatched through [localScope] using the injected
+ * [DefaultDispatcher] to ensure thread-safe state management from BLE callbacks.
+ *
+ * **Permissions:** Requires `BLUETOOTH_ADVERTISE` and `BLUETOOTH_CONNECT` permissions on Android 12+.
+ * The [SuppressLint] annotation is safe because permission checks are performed upstream by
+ * `StartServicesUseCase` before this class is instantiated and used.
+ *
+ * **Lifecycle:** This is a singleton scoped to [AppScope].
+ *
+ * @param context Android application context for accessing system services
+ * @param dispatcher Coroutine dispatcher for background operations (injected via [DefaultDispatcher])
+ */
 @SuppressLint("MissingPermission")
+@SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 @Inject
-@SingleIn(AppScope::class)
 internal class BluetoothLocalDataSourceImpl(
     private val context: Context,
     @DefaultDispatcher dispatcher: CoroutineDispatcher
 ) : BluetoothLocalDataSource {
 
-    private val _advertisingState = MutableStateFlow<AdvertisingState>(AdvertisingState.Stopped)
-    override val advertisingState = _advertisingState.asStateFlow()
-    private val _clientConnectedState = MutableStateFlow(false)
-    override val clientConnectedState = _clientConnectedState.asStateFlow()
+    @Volatile
+    private var isGattInitialized = false
 
-    private var isInitialized = false
     private val bluetoothManager: BluetoothManager? = context.getSystemService(
         Context.BLUETOOTH_SERVICE
     ) as? BluetoothManager
     private val localScope: CoroutineScope = CoroutineScope(Job() + dispatcher)
+    private val logger = Logger.withTag(TAG)
     private val serviceImplementations = HashMap<BluetoothGattService, Service>()
     private var heartRateService: HeartRateService? = null
 
+    private val _clientConnectedState = MutableStateFlow(false)
+    override val clientConnectedState = _clientConnectedState.asStateFlow()
+
+    /**
+     * Peripheral manager instance created outside the flow lifecycle.
+     * This allows it to persist across flow collection/cancellation cycles.
+     */
+    @Volatile
+    private var peripheralManager: BluetoothPeripheralManager? = null
+
+    /**
+     * Flow of advertising state changes from the BLE peripheral manager.
+     * Uses callbackFlow to convert callback-based API to Flow.
+     * The peripheral manager is created once and reused for repeated start/stop cycles.
+     */
     @Suppress("TooManyFunctions")
-    private val peripheralManagerCallback: BluetoothPeripheralManagerCallback =
-        object : BluetoothPeripheralManagerCallback() {
+    override val advertisingState: StateFlow<AdvertisingState> = callbackFlow {
+        val callback = object : BluetoothPeripheralManagerCallback() {
             override fun onCharacteristicRead(
                 bluetoothCentral: BluetoothCentral,
                 characteristic: BluetoothGattCharacteristic
@@ -136,7 +173,9 @@ internal class BluetoothLocalDataSourceImpl(
                 val serviceImplementation = serviceImplementations[characteristic.service]
                 serviceImplementation?.onNotifyingEnabled(bluetoothCentral, characteristic)?.let {
                     if (it) {
-                        _clientConnectedState.value = true
+                        localScope.launch {
+                            _clientConnectedState.emit(true)
+                        }
                     }
                 }
             }
@@ -174,41 +213,64 @@ internal class BluetoothLocalDataSourceImpl(
                 for (serviceImplementation in serviceImplementations.values) {
                     serviceImplementation.onCentralDisconnected(bluetoothCentral)
                 }
-                peripheralManager?.connectedCentrals?.isEmpty().run {
-                    _clientConnectedState.value = false
+                if (peripheralManager?.connectedCentrals?.isEmpty() == true) {
+                    localScope.launch {
+                        _clientConnectedState.emit(false)
+                    }
                 }
             }
 
             override fun onAdvertisingStarted(settingsInEffect: AdvertiseSettings) {
-                localScope.launch {
-                    _advertisingState.emit(AdvertisingState.Started)
-                }
+                logger.d("Advertising started")
+                trySend(AdvertisingState.Started)
             }
 
             override fun onAdvertisingStopped() {
-                localScope.launch {
-                    _advertisingState.emit(AdvertisingState.Stopped)
-                }
+                logger.d("Advertising stopped")
+                trySend(AdvertisingState.Stopped)
             }
 
             override fun onAdvertiseFailure(advertiseError: AdvertiseError) {
-                localScope.launch {
-                    Log.e(TAG, "${advertiseError.name} ${advertiseError.value}")
-                    _advertisingState.emit(AdvertisingState.Failure)
-                }
+                logger.d("${advertiseError.name} ${advertiseError.value}")
+                trySend(AdvertisingState.Failure)
             }
         }
-    private var peripheralManager: BluetoothPeripheralManager?
 
-    init {
-        peripheralManager = bluetoothManager?.let {
-            BluetoothPeripheralManager(
-                context,
-                it,
-                peripheralManagerCallback
-            )
+        // Create the peripheral manager once if not already created
+        if (peripheralManager == null) {
+            peripheralManager = bluetoothManager?.let { manager ->
+                try {
+                    manager.adapter.name = Build.MODEL
+                } catch (e: SecurityException) {
+                    logger.w("Unable to set Bluetooth adapter name: ${e.message}")
+                }
+                BluetoothPeripheralManager(
+                    context,
+                    manager,
+                    callback
+                )
+            }
+            logger.d("Peripheral manager created")
         }
-    }
+
+        // Send initial state
+        val initialState = if (peripheralManager?.isAdvertising == true) {
+            AdvertisingState.Started
+        } else {
+            AdvertisingState.Stopped
+        }
+        trySend(initialState)
+
+        awaitClose {
+            // Flow cancelled - peripheral manager persists and is NOT closed here
+            // It will be cleaned up when the entire class instance is destroyed
+            logger.d("advertisingState flow closed (peripheral manager persists)")
+        }
+    }.stateIn(
+        scope = localScope,
+        started = SharingStarted.Eagerly,
+        initialValue = AdvertisingState.Stopped
+    )
 
     override fun getHardwareState(): HardwareState = bluetoothManager?.let { manager ->
         val bluetoothAdapter = manager.adapter
@@ -229,84 +291,112 @@ internal class BluetoothLocalDataSourceImpl(
      * @param bluetoothAdapter System [android.bluetooth.BluetoothAdapter].
      * @return true if Bluetooth is properly supported, false otherwise.
      */
-    private fun checkBluetoothSupport(bluetoothAdapter: BluetoothAdapter?): Boolean {
-        return when {
-            bluetoothAdapter == null -> {
-                Log.w(TAG, "Bluetooth is not supported")
-                false
-            }
-
-            !context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) -> {
-                Log.w(TAG, "Bluetooth LE is not supported")
-                return false
-            }
-
-            else -> true
+    private fun checkBluetoothSupport(bluetoothAdapter: BluetoothAdapter?): Boolean = when {
+        bluetoothAdapter == null -> {
+            logger.w("Bluetooth is not supported")
+            false
         }
+
+        !context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) -> {
+            logger.w("Bluetooth LE is not supported")
+            false
+        }
+
+        else -> true
     }
 
-    private fun initialize() {
-        bluetoothManager?.let {
-            it.adapter.name = Build.MODEL
-        }
-        if (peripheralManager == null) { // Nulled on stopping
-            peripheralManager = bluetoothManager?.let {
-                BluetoothPeripheralManager(
-                    context,
-                    it,
-                    peripheralManagerCallback
-                )
-            }
-        }
-        peripheralManager?.apply {
-            openGattServer()
-            removeAllServices()
+    /**
+     * Initialize the GATT server with services.
+     * This only needs to be called once - the GATT server persists across advertising start/stop cycles.
+     */
+    private fun initializeGattServer() {
+        if (!isGattInitialized) {
+            peripheralManager?.apply {
+                openGattServer()
+                removeAllServices()
 
-            heartRateService = HeartRateService(this).also {
-                serviceImplementations[it.service] = it // More services in the example code
-            }
-            for (service in serviceImplementations.keys) {
-                add(service)
-            }
-            isInitialized = true
+                heartRateService = HeartRateService(this).also {
+                    serviceImplementations[it.service] = it
+                }
+                for (service in serviceImplementations.keys) {
+                    add(service)
+                }
+                isGattInitialized = true
+                logger.d("GATT server initialized with Heart Rate Service")
+            } ?: logger.e("Cannot initialize GATT server: peripheralManager is null")
         }
-    }
-
-    override fun stop() {
-        if (isInitialized) {
-            peripheralManager?.close()
-        }
-        peripheralManager = null
     }
 
     override fun permissionsGranted() = peripheralManager?.permissionsGranted() == true
 
+    /**
+     * Stop advertising.
+     * The GATT server and peripheral manager remain active for future advertising cycles.
+     */
+    override fun stopAdvertising() {
+        peripheralManager?.let { manager ->
+            if (manager.isAdvertising) {
+                manager.stopAdvertising()
+                logger.d("Stopping advertising")
+            } else {
+                logger.d("Already stopped")
+            }
+        } ?: logger.e("Cannot stop advertising: peripheralManager is null")
+    }
+
+    /**
+     * Cleanup method to properly dispose of resources.
+     * Should be called when the data source is no longer needed.
+     */
+    fun cleanup() {
+        logger.d("Cleaning up BluetoothLocalDataSource")
+        peripheralManager?.close()
+        peripheralManager = null
+        isGattInitialized = false
+        localScope.cancel()
+    }
+
+    /**
+     * Start BLE advertising.
+     * Initializes the GATT server on first call, then can be called repeatedly to toggle advertising.
+     */
     override fun startAdvertising() {
-        initialize()
-        peripheralManager?.let {
-            if (!it.isAdvertising) {
+        initializeGattServer()
+        peripheralManager?.let { manager ->
+            if (!manager.isAdvertising && advertisingState.value != AdvertisingState.Started) {
                 val advertiseSettings = AdvertiseSettings.Builder()
-                    .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
-                    .setConnectable(true)
-                    .setTimeout(0)
-                    .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
+                    .setAdvertiseMode(ADVERTISE_MODE)
+                    .setConnectable(ADVERTISE_CONNECTABLE)
+                    .setTimeout(ADVERTISE_TIMEOUT)
+                    .setTxPowerLevel(TX_POWER_LEVEL)
                     .build()
                 val advertiseData = AdvertiseData.Builder()
                     .setIncludeTxPowerLevel(true)
-                    .addServiceUuid(ParcelUuid(HeartRateService.Companion.HRS_SERVICE_UUID))
+                    .addServiceUuid(ParcelUuid(HeartRateService.HRS_SERVICE_UUID))
                     .build()
                 val scanResponse = AdvertiseData.Builder()
                     .setIncludeDeviceName(true)
                     .build()
-                peripheralManager?.startAdvertising(advertiseSettings, advertiseData, scanResponse)
+                manager.startAdvertising(advertiseSettings, advertiseData, scanResponse)
+                logger.d("Starting advertising")
             } else {
-                Log.d(TAG, "Already advertising")
+                logger.d("Already advertising")
             }
-        }
+        } ?: logger.e("Cannot start advertising: peripheralManager is null")
     }
 
     @Suppress("UseOrEmpty")
     override fun getMissingPermissions(): Array<out String> = peripheralManager?.getMissingPermissions().orEmpty()
 
-    override fun notifyHeartRate(bpm: Int) = heartRateService?.notifyHeartRate(bpm)
+    override fun notifyHeartRate(bpm: Int): Boolean {
+        heartRateService?.notifyHeartRate(bpm)
+        return heartRateService != null
+    }
+
+    companion object {
+        private const val ADVERTISE_MODE = AdvertiseSettings.ADVERTISE_MODE_BALANCED
+        private const val TX_POWER_LEVEL = AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM
+        private const val ADVERTISE_TIMEOUT = 0
+        private const val ADVERTISE_CONNECTABLE = true
+    }
 }

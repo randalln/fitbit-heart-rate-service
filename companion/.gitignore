@@ -146,6 +146,7 @@ fabric.properties
 .DS_Store
 keystore.properties
 lint-rules
+.kotlin
 
 # Xcode user-specific files
 **/xcuserdata/

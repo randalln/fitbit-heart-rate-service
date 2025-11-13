@@ -1,6 +1,6 @@
 package org.noblecow.hrservice.data.source.local
 
-internal data class WebServerState(
+data class WebServerState(
     val error: Throwable? = null,
-    val isRunning: Boolean = false
+    val isReady: Boolean = false
 )

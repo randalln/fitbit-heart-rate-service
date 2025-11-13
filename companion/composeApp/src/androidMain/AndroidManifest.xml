@@ -37,7 +37,8 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.AppTheme">
+            android:theme="@style/Theme.AppTheme"
+            tools:ignore="Instantiatable">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -53,7 +54,8 @@
 
         <receiver
             android:name=".HRBroadcastReceiver"
-            android:exported="false" />
+            android:exported="false"
+            tools:ignore="Instantiatable" />
 
         <!-- If you want to disable android.startup completely. -->
         <provider

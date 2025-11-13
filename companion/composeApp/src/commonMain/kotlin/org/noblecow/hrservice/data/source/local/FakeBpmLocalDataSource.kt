@@ -16,15 +16,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import org.noblecow.hrservice.data.util.FAKE_BPM_END
+import org.noblecow.hrservice.data.util.FAKE_BPM_INTERVAL_MS
 import org.noblecow.hrservice.data.util.FAKE_BPM_START
 import org.noblecow.hrservice.data.util.PORT_LISTEN
 import org.noblecow.hrservice.di.IoDispatcher
 
 @SingleIn(AppScope::class)
 @Inject
-internal class FakeBpmLocalDataSource(
-    @IoDispatcher private val dispatcher: CoroutineDispatcher
-) {
+internal class FakeBpmLocalDataSource(@IoDispatcher private val dispatcher: CoroutineDispatcher) {
     private val httpClient: HttpClient by lazy {
         HttpClient {
             install(ClientContentNegotiation) {
@@ -52,8 +51,7 @@ internal class FakeBpmLocalDataSource(
                 bpm = FAKE_BPM_START
             }
             emit(bpm++)
-            // delay(Duration.ofSeconds(FAKE_BPM_INTERVAL))
-            delay(1000)
+            delay(FAKE_BPM_INTERVAL_MS)
         }
     }
 }

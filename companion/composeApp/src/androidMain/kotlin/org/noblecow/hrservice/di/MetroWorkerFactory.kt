@@ -9,14 +9,12 @@ import androidx.work.WorkerParameters
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
-import kotlin.jvm.kotlin
 import kotlin.reflect.KClass
 
 @ContributesBinding(AppScope::class)
 @Inject
-class MetroWorkerFactory(
-    val workerProviders: Map<KClass<out ListenableWorker>, WorkerInstanceFactory<*>>
-) : WorkerFactory() {
+class MetroWorkerFactory(val workerProviders: Map<KClass<out ListenableWorker>, WorkerInstanceFactory<*>>) :
+    WorkerFactory() {
     override fun createWorker(
         appContext: Context,
         workerClassName: String,

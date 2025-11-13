@@ -18,9 +18,7 @@ import org.noblecow.hrservice.di.AndroidAppGraph
  */
 @ContributesBinding(AppScope::class)
 @Inject
-internal class MetroViewModelFactory(
-    internal val appGraph: AndroidAppGraph
-) : ViewModelProvider.Factory {
+internal class MetroViewModelFactory(val appGraph: AndroidAppGraph) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
         val viewModelGraph = viewModelGraph(extras)
 

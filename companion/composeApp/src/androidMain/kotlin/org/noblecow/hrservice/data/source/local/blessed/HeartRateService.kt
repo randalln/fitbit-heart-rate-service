@@ -10,13 +10,12 @@ import java.util.UUID
 /**
  * Originally pulled from peripheral example in https://github.com/weliem/blessed-kotlin
  */
-internal class HeartRateService(
-    peripheralManager: BluetoothPeripheralManager
-) : BaseService(
-    peripheralManager,
-    BluetoothGattService(HRS_SERVICE_UUID, SERVICE_TYPE_PRIMARY),
-    "HeartRate Service"
-) {
+internal class HeartRateService(peripheralManager: BluetoothPeripheralManager) :
+    BaseService(
+        peripheralManager,
+        BluetoothGattService(HRS_SERVICE_UUID, SERVICE_TYPE_PRIMARY),
+        "HeartRate Service"
+    ) {
 
     private val measurement = BluetoothGattCharacteristic(
         HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID,

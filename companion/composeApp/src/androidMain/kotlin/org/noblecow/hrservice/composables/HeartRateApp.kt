@@ -28,62 +28,53 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequest
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
-import com.mikepenz.aboutlibraries.ui.compose.android.rememberLibraries
+import co.touchlab.kermit.Logger
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
+import com.mikepenz.aboutlibraries.ui.compose.produceLibraries
+import heartratemonitor.composeapp.generated.resources.Res
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import org.noblecow.hrservice.R
-import org.noblecow.hrservice.WORKER_NAME
 import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.data.util.ANIMATION_MILLIS
-import org.noblecow.hrservice.data.util.DEFAULT_BPM
 import org.noblecow.hrservice.viewmodel.MainViewModel
 import org.noblecow.hrservice.viewmodel.metroViewModel
-import org.slf4j.LoggerFactory
+
+private const val TAG = "HeartRateApp"
 
 @Composable
-@Suppress("LongMethod", "CyclomaticComplexMethod")
+@Suppress("LongMethod")
 internal fun HeartRateApp(
-    workRequest: OneTimeWorkRequest,
-    workState: StateFlow<List<WorkInfo>?>,
-    workManager: WorkManager,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController()
 ) {
     val viewModel = metroViewModel<MainViewModel>()
-    val logger = LoggerFactory.getLogger("HeartRateApp")
+    val logger = Logger.withTag(TAG)
     val uiState by viewModel.mainUiState.collectAsState()
-    val workerState = workState.collectAsState()
     val permissionsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         viewModel.receivePermissions(permissions)
     }
-    val enableBluetoothLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+    val enableBluetoothLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
         if (it.resultCode != Activity.RESULT_OK) {
             viewModel.userDeclinedBluetoothEnable()
         } else {
             viewModel.start()
         }
     }
-    logger.debug(uiState.toString())
 
     // Side-effects
     uiState.permissionsRequested?.let {
         LaunchedEffect(uiState) {
-            logger.debug("Requesting permissions: $it")
+            logger.d("Requesting permissions: $it")
             permissionsLauncher.launch(it.toTypedArray())
         }
     }
@@ -91,29 +82,11 @@ internal fun HeartRateApp(
     uiState.bluetoothRequested?.let {
         if (it) {
             LaunchedEffect(uiState) {
-                logger.debug("Need to enable bluetooth")
+                logger.d("Need to enable bluetooth")
                 val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                 enableBluetoothLauncher.launch(intent)
             }
         }
-    }
-
-    // (re-)start the foreground service via WorkManager
-    val serviceState: WorkInfo.State? = workerState.value?.find {
-        WorkInfo.State.SUCCEEDED == it.state
-    }?.state
-    workerState.value?.let {
-        if (uiState.startAndroidService &&
-            (serviceState == null || serviceState == WorkInfo.State.SUCCEEDED)
-        ) {
-            logger.debug("Starting Foreground Service")
-            workManager.enqueueUniqueWork(WORKER_NAME, ExistingWorkPolicy.KEEP, workRequest)
-            viewModel.androidServiceStarted()
-        }
-    }
-
-    val userMessage = uiState.userMessage?.let {
-        stringResource(id = it)
     }
 
     // Get current back stack entry
@@ -154,7 +127,7 @@ internal fun HeartRateApp(
             NavHost(
                 navController = navController,
                 startDestination = HeartRateScreen.Home.name,
-                modifier = Modifier.Companion
+                modifier = Modifier
                     .fillMaxSize()
                     // .verticalScroll(rememberScrollState())
                     .padding(innerPadding)
@@ -164,32 +137,30 @@ internal fun HeartRateApp(
                     animationEnd = true
                 }
                 composable(route = HeartRateScreen.Home.name) {
-                    val showStart = uiState.servicesState == ServicesState.Stopped ||
-                        uiState.servicesState == ServicesState.Starting
-                    val startStopEnabled = uiState.servicesState == ServicesState.Stopped ||
-                        uiState.servicesState == ServicesState.Started
                     HomeScreen(
-                        onStartClick = { if (showStart) viewModel.start() else viewModel.stop() },
+                        onStartClick = { viewModel.start() },
+                        onStopClick = { viewModel.stop() },
                         showAwaitingClient = uiState.servicesState == ServicesState.Started &&
                             !uiState.isClientConnected,
                         bpm = uiState.bpm,
                         animationEnd = animationEnd,
-                        showStart = showStart,
-                        startStopEnabled = startStopEnabled
+                        showStart = uiState.servicesState == ServicesState.Stopped
                     )
-                    if (localBpmCount != DEFAULT_BPM && localBpmCount != uiState.bpmCount) {
+                    if (localBpmCount != 0 && localBpmCount != uiState.bpmCount) {
                         bpmJob.start()
                         animationEnd = false
                     }
                     localBpmCount = uiState.bpmCount
                 }
                 composable(route = HeartRateScreen.OpenSource.name) {
-                    val libraries by rememberLibraries(R.raw.aboutlibraries)
+                    val libraries by produceLibraries {
+                        Res.readBytes("files/aboutlibraries.json").decodeToString()
+                    }
                     LibrariesContainer(libraries, Modifier.Companion.fillMaxSize())
                 }
-                userMessage?.let {
+                uiState.userMessage?.let {
                     scope.launch {
-                        snackbarHostState.showSnackbar(message = userMessage)
+                        snackbarHostState.showSnackbar(message = it)
                         viewModel.userMessageShown()
                     }
                 }

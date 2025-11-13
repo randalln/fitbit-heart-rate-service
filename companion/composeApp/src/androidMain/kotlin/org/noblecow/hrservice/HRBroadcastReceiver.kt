@@ -14,28 +14,10 @@ import org.noblecow.hrservice.di.ReceiverKey
 @ContributesIntoMap(AppScope::class, binding<BroadcastReceiver>())
 @ReceiverKey(HRBroadcastReceiver::class)
 @Inject
-internal class HRBroadcastReceiver(
-    val mainRepository: MainRepository
-) : BroadcastReceiver() {
-    // KoinComponent {
-    // internal val mainRepository: MainRepository by inject()
-
-    // @Inject
-    // internal lateinit var mainRepository: MainRepository
-
+class HRBroadcastReceiver(val mainRepository: MainRepository) : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         runBlocking {
             mainRepository.stopServices()
         }
     }
-
-    /*
-    @ReceiverKey(HRBroadcastReceiver::class)
-    @ContributesIntoMap(
-        AppScope::class,
-        binding = binding<MetroReceiverFactory.ReceiverInstanceFactory<*>>()
-    )
-    @AssistedFactory
-    abstract class Factory : MetroReceiverFactory.ReceiverInstanceFactory<HRBroadcastReceiver>
-     */
 }

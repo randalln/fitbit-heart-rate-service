@@ -30,7 +30,7 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
-    // alias(libs.plugins.ksp)
+    alias(libs.plugins.kover)
     alias(libs.plugins.ktlint.gradle)
     alias(libs.plugins.metro)
 }
@@ -61,11 +61,9 @@ kotlin {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 
-    // jvm()
-
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
@@ -91,8 +89,9 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
-            // implementation(libs.androidx.lifecycle.viewmodelCompose)
-            // implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.aboutlibraries.core)
+            implementation(libs.aboutlibraries.compose.m3)
+            api(libs.lifecycle.viewmodel.compose)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.ktor.client.core)
@@ -104,32 +103,27 @@ kotlin {
             implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.status.pages)
             implementation(libs.kermit)
+            implementation(libs.navigation.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kermit.test)
         }
         androidMain.dependencies {
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
             implementation(libs.activity.compose)
             implementation(libs.activity.ktx)
             implementation(libs.androidx.compose.material3)
-            implementation(libs.androidx.compose.ui.tooling.preview)
             implementation(libs.material)
-            implementation(libs.navigation.compose)
-            implementation(libs.navigation.ui.ktx)
             implementation(libs.work.runtime.ktx)
-            implementation(libs.androidx.compose.ui.test)
 
             // Third-party libraries
-            implementation(libs.aboutlibraries.compose.m3)
             implementation(libs.blessed.kotlin)
-            implementation(libs.timber)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.ktor.server.call.logging)
             implementation(libs.ktor.server.netty)
             implementation(libs.logback.android)
-            implementation(libs.slf4j.api)
         }
         androidUnitTest.dependencies {
             implementation(libs.androidx.compose.ui.tooling)
@@ -153,22 +147,7 @@ kotlin {
             implementation(libs.ktor.server.cio)
             implementation(libs.ktor.server.core)
         }
-        /*
-        jvmMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.kotlinx.coroutines.swing)
-            // implementation(project.dependencies.platform(libs.androidx.compose.bom))
-            // api(compose.runtime)
-        }
-         */
     }
-
-    // KSP Common sourceSet
-    /*
-    sourceSets.named("commonMain").configure {
-        kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
-    }
-     */
 }
 
 android {
@@ -229,8 +208,8 @@ android {
         unitTests.isReturnDefaultValues = true
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     kotlin {
         compilerOptions {
@@ -255,18 +234,14 @@ configurations.testImplementation {
     exclude(module = "logback-android")
 }
 
-// Trigger Common Metadata Generation from Native tasks
-/*
-tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
-    dependsOn("kspCommonMainKotlinMetadata")
-}
-*/
-
-tasks.matching {
-    it.name.startsWith("runKtlintCheckOverCommonMainSourceSet") &&
-        it.name != "kspCommonMainKotlinMetadata"
-}.configureEach {
-    dependsOn("kspCommonMainKotlinMetadata")
+aboutLibraries {
+    export {
+        // Define the output path for manual generation
+        // Adjust the path based on your project structure (e.g., composeResources, Android res/raw)
+        outputFile = file("src/commonMain/composeResources/files/aboutlibraries.json")
+        // Optionally specify the variant for export
+        // variant = "release"
+    }
 }
 
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {

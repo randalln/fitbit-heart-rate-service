@@ -7,44 +7,52 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.test.platform.app.InstrumentationRegistry
-import org.junit.BeforeClass
+import androidx.test.rule.GrantPermissionRule
+import heartratemonitor.composeapp.generated.resources.Res
+import heartratemonitor.composeapp.generated.resources.app_name
+import heartratemonitor.composeapp.generated.resources.start
+import heartratemonitor.composeapp.generated.resources.stop
+import kotlinx.coroutines.runBlocking
+import org.jetbrains.compose.resources.getString
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 
 @OptIn(ExperimentalTestApi::class)
 class SmokeTest {
 
-    @get:Rule
-    internal val composeTestRule = createAndroidComposeRule<MainActivity>()
+    private val permissionRule = GrantPermissionRule.grant(
+        Manifest.permission.BLUETOOTH_CONNECT,
+        Manifest.permission.BLUETOOTH_ADVERTISE,
+        Manifest.permission.POST_NOTIFICATIONS
+    )
 
-    companion object {
-        @BeforeClass
-        @JvmStatic
-        fun beforeClass() {
-            val packageName = InstrumentationRegistry.getInstrumentation().targetContext.packageName
-            InstrumentationRegistry.getInstrumentation().uiAutomation.apply {
-                grantRuntimePermission(packageName, Manifest.permission.BLUETOOTH_CONNECT)
-                grantRuntimePermission(packageName, Manifest.permission.BLUETOOTH_ADVERTISE)
-                grantRuntimePermission(packageName, Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-    }
+    private val composeRule = createAndroidComposeRule<MainActivity>()
+
+    @get:Rule
+    val ruleChain: RuleChain = RuleChain
+        .outerRule(permissionRule)
+        .around(composeRule)
+
+    internal val composeTestRule get() = composeRule
 
     @Test
     fun basicTest() {
+        val appName = runBlocking { getString(Res.string.app_name) }
+        val start = runBlocking { getString(Res.string.start) }
+
         composeTestRule
-            .onNodeWithText(composeTestRule.activity.getString(R.string.app_name))
+            .onNodeWithText(appName)
             .assertExists()
         composeTestRule
-            .onNodeWithText(composeTestRule.activity.getString(R.string.start))
+            .onNodeWithText(start)
             .assertHasClickAction()
     }
 
     @Test
     fun startStopTest() {
-        val startText = composeTestRule.activity.getString(R.string.start)
-        val stopText = composeTestRule.activity.getString(R.string.stop)
+        val startText = runBlocking { getString(Res.string.start) }
+        val stopText = runBlocking { getString(Res.string.stop) }
 
         composeTestRule
             .onNodeWithText(startText)

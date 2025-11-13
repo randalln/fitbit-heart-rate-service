@@ -1,10 +1,17 @@
 package org.noblecow.hrservice
 
 import app.cash.turbine.test
+import co.touchlab.kermit.CommonWriter
+import co.touchlab.kermit.ExperimentalKermitApi
+import co.touchlab.kermit.Logger
+import co.touchlab.kermit.loggerConfigInit
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -25,6 +32,7 @@ import org.noblecow.hrservice.data.source.local.WebServerLocalDataSource
 import org.noblecow.hrservice.data.source.local.WebServerState
 import org.noblecow.hrservice.data.util.FAKE_BPM_START
 
+@OptIn(ExperimentalKermitApi::class)
 class MainRepositoryTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -44,67 +52,72 @@ class MainRepositoryTest {
     }
     private val webServerLocalDataSource: WebServerLocalDataSource = mockk(relaxed = true) {
         every { webServerState } returns mockWebServerState
-        every { bpmStream } returns mockBpm
+        every { bpmFlow } returns mockBpm
     }
     private val fakeBpmLocalDataSource: FakeBpmLocalDataSource = mockk()
 
     @Before
     fun before() {
+        val testScope = CoroutineScope(SupervisorJob() + mainDispatcherRule.testDispatcher)
+        val logger = Logger(loggerConfigInit(CommonWriter()), "MainRepositoryTest")
+
         mainRepository = MainRepositoryImpl(
             bluetoothLocalDataSource,
             webServerLocalDataSource,
             fakeBpmLocalDataSource,
-            mainDispatcherRule.testDispatcher
+            testScope,
+            logger
         )
     }
 
     @Test
     fun `All four ServicesStates are emitted`() = runTest {
-        mainRepository.getAppStateStream().test {
+        mainRepository.appStateFlow.test {
             assertEquals(AppState(servicesState = ServicesState.Stopped), awaitItem())
             mainRepository.startServices()
             mockAdvertisingFlow.value = AdvertisingState.Started
             assertEquals(AppState(servicesState = ServicesState.Starting), awaitItem())
-            mockWebServerState.value = WebServerState(isRunning = true)
+            mockWebServerState.value = WebServerState(isReady = true)
             assertEquals(AppState(servicesState = ServicesState.Started), awaitItem())
+
             mainRepository.stopServices()
-            verify { bluetoothLocalDataSource.stop() }
-            verify { webServerLocalDataSource.stop() }
+            verify { bluetoothLocalDataSource.stopAdvertising() }
+            coVerify { webServerLocalDataSource.stop() }
             mockAdvertisingFlow.value = AdvertisingState.Stopped
             assertEquals(AppState(servicesState = ServicesState.Stopping), awaitItem())
-            mockWebServerState.value = WebServerState(isRunning = false)
+            mockWebServerState.value = WebServerState(isReady = false)
             assertEquals(AppState(servicesState = ServicesState.Stopped), awaitItem())
         }
     }
 
     @Test
-    fun `All services stop when Bluetooth stops advertising`() = runTest {
-        mainRepository.getAppStateStream().test {
+    fun `Web server stops when Bluetooth stops advertising`() = runTest {
+        mainRepository.appStateFlow.test {
             assertEquals(AppState(servicesState = ServicesState.Stopped), awaitItem())
             mainRepository.startServices()
             mockAdvertisingFlow.value = AdvertisingState.Started
             assertEquals(AppState(servicesState = ServicesState.Starting), awaitItem())
-            mockWebServerState.value = WebServerState(isRunning = true)
+            mockWebServerState.value = WebServerState(isReady = true)
             assertEquals(AppState(servicesState = ServicesState.Started), awaitItem())
             mockAdvertisingFlow.value = AdvertisingState.Stopped
-            verify { webServerLocalDataSource.stop() }
+            coVerify { webServerLocalDataSource.stop() }
             assertEquals(AppState(servicesState = ServicesState.Stopping), awaitItem())
-            mockWebServerState.value = WebServerState(isRunning = false)
+            mockWebServerState.value = WebServerState(isReady = false)
             assertEquals(AppState(servicesState = ServicesState.Stopped), awaitItem())
         }
     }
 
     @Test
     fun `All services stop when the web server stops`() = runTest {
-        mainRepository.getAppStateStream().test {
+        mainRepository.appStateFlow.test {
             assertEquals(AppState(servicesState = ServicesState.Stopped), awaitItem())
             mainRepository.startServices()
             mockAdvertisingFlow.value = AdvertisingState.Started
             assertEquals(AppState(servicesState = ServicesState.Starting), awaitItem())
-            mockWebServerState.value = WebServerState(isRunning = true)
+            mockWebServerState.value = WebServerState(isReady = true)
             assertEquals(AppState(servicesState = ServicesState.Started), awaitItem())
-            mockWebServerState.value = WebServerState(isRunning = false)
-            verify { bluetoothLocalDataSource.stop() }
+            mockWebServerState.value = WebServerState(isReady = false)
+            verify { bluetoothLocalDataSource.stopAdvertising() }
             assertEquals(AppState(servicesState = ServicesState.Stopping), awaitItem())
             mockAdvertisingFlow.value = AdvertisingState.Stopped
             assertEquals(AppState(servicesState = ServicesState.Stopped), awaitItem())
@@ -115,15 +128,15 @@ class MainRepositoryTest {
     @Test
     fun `BPM with the same value are sent over BLE`() = runTest {
         val job = launch {
-            mainRepository.getAppStateStream().collect {
+            mainRepository.appStateFlow.collect {
                 println("extra subscriber: $it")
             }
         }
 
-        mainRepository.getAppStateStream().test {
+        mainRepository.appStateFlow.test {
             awaitItem()
             mainRepository.startServices()
-            mockWebServerState.value = WebServerState(isRunning = true)
+            mockWebServerState.value = WebServerState(isReady = true)
             awaitItem()
             mockAdvertisingFlow.value = AdvertisingState.Started
             assertEquals(AppState(servicesState = ServicesState.Started), awaitItem())

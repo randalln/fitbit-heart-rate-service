@@ -40,7 +40,10 @@ class MetroAppComponentFactory : AppComponentFactory() {
 
     override fun instantiateApplicationCompat(cl: ClassLoader, className: String): Application {
         val app = super.instantiateApplicationCompat(cl, className)
-        activityProviders = (app as HeartRateApplication).appGraph.activityProviders
+        (app as HeartRateApplication).let {
+            activityProviders = it.appGraph.activityProviders
+            receiverProviders = it.appGraph.receiverProviders
+        }
         return app
     }
 
@@ -48,12 +51,12 @@ class MetroAppComponentFactory : AppComponentFactory() {
         cl: ClassLoader,
         className: String,
         intent: Intent?
-    ): BroadcastReceiver {
-        return super.instantiateReceiverCompat(cl, className, intent)
-    }
+    ): BroadcastReceiver = getInstance(cl, className, receiverProviders)
+        ?: super.instantiateReceiverCompat(cl, className, intent)
 
     // AppComponentFactory can be created multiple times
     companion object {
         private lateinit var activityProviders: Map<KClass<out Activity>, Provider<Activity>>
+        private lateinit var receiverProviders: Map<KClass<out BroadcastReceiver>, Provider<BroadcastReceiver>>
     }
 }

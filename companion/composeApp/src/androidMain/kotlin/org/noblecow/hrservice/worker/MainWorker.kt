@@ -1,4 +1,4 @@
-package org.noblecow.hrservice
+package org.noblecow.hrservice.worker
 
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
@@ -14,25 +14,34 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import co.touchlab.kermit.Logger
+import co.touchlab.kermit.loggerConfigInit
+import co.touchlab.kermit.platformLogWriter
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.binding
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
+import heartratemonitor.composeapp.generated.resources.Res
+import heartratemonitor.composeapp.generated.resources.awaiting_client
+import heartratemonitor.composeapp.generated.resources.bpm
+import heartratemonitor.composeapp.generated.resources.channel_1_description
+import heartratemonitor.composeapp.generated.resources.channel_1_name
+import heartratemonitor.composeapp.generated.resources.client_connected
+import heartratemonitor.composeapp.generated.resources.stop
+import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.takeWhile
-import kotlinx.coroutines.launch
+import org.noblecow.hrservice.HRBroadcastReceiver
+import org.noblecow.hrservice.MainActivity
+import org.noblecow.hrservice.R
 import org.noblecow.hrservice.data.repository.AppState
 import org.noblecow.hrservice.data.repository.MainRepository
 import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.data.util.DEFAULT_BPM
-import org.noblecow.hrservice.di.IoDispatcher
+import org.noblecow.hrservice.data.util.ResourceHelper
 import org.noblecow.hrservice.di.MetroWorkerFactory
 import org.noblecow.hrservice.di.WorkerKey
-import org.slf4j.LoggerFactory
 
 private const val CHANNEL_ID = "channel_id_1"
 private const val NOTIFICATION_ID = 0
@@ -44,56 +53,51 @@ internal class MainWorker(
     context: Context,
     @Assisted params: WorkerParameters,
     private val mainRepository: MainRepository,
-    @IoDispatcher dispatcher: CoroutineDispatcher
+    private val resourceHelper: ResourceHelper,
+    private val logger: Logger = Logger(loggerConfigInit(platformLogWriter()), TAG)
 ) : CoroutineWorker(context, params) {
 
-    private val notificationManager = context.getSystemService(
-        Context.NOTIFICATION_SERVICE
-    ) as NotificationManager
-
-    private val localScope: CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
-    private val logger = LoggerFactory.getLogger(TAG)
+    private val notificationManager = NotificationManagerCompat.from(applicationContext)
     private lateinit var notificationBuilder: NotificationCompat.Builder
 
     @SuppressLint("MissingPermission")
     @Suppress("SwallowedException", "TooGenericExceptionCaught")
     override suspend fun doWork(): Result {
+        logger.d("MainWorker starting - runAttemptCount: $runAttemptCount")
         return try {
-            setForeground(createForegroundInfo())
+            logger.d("Creating foreground info...")
+            val foregroundInfo = createForegroundInfo()
+            logger.d("Setting foreground...")
+            setForeground(foregroundInfo)
+            logger.d("Foreground service started successfully")
 
-            val notificationManager = NotificationManagerCompat.from(applicationContext)
-            var previousState: AppState? = null
-            val job = localScope.launch {
-                mainRepository.getAppStateStream()
-                    .takeWhile {
-                        previousState == null || it.servicesState != ServicesState.Stopped
+            mainRepository.appStateFlow
+                .takeWhile { it.servicesState != ServicesState.Stopped }
+                .scan(null as AppState?) { previousState, currentState ->
+                    // Now this only processes non-Stopped states
+                    val updateNotification = previousState == null ||
+                        previousState.bpm != currentState.bpm ||
+                        previousState.isClientConnected != currentState.isClientConnected
+                    if (updateNotification) {
+                        updateNotification(currentState)
+                        notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
                     }
-                    .collect {
-                        logger.debug("$it")
-                        val updateNotification = previousState?.let { previousState ->
-                            previousState.bpm != it.bpm ||
-                                previousState.isClientConnected != it.isClientConnected
-                        } != false
-                        if (updateNotification) {
-                            updateNotification(it)
-                            notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
-                        }
-                        previousState = it
-                    }
-            }
-            mainRepository.startServices()
-            job.join()
+                    currentState
+                }
+                .collect { /* Work handled in the scan */ }
 
+            logger.d("MainWorker completed successfully")
             return Result.success()
         } catch (error: Throwable) {
-            logger.error(error.localizedMessage, error)
+            logger.e("MainWorker failed: ${error.javaClass.simpleName} - ${error.message}", error)
             Result.failure()
         } finally {
-            notificationManager.cancelAll()
+            logger.d("MainWorker cleanup: cancelling notifications")
+            notificationManager.cancel(NOTIFICATION_ID)
         }
     }
 
-    private fun createForegroundInfo(): ForegroundInfo {
+    private suspend fun createForegroundInfo(): ForegroundInfo {
         createNotificationChannel()
 
         val broadcastIntent = Intent(applicationContext, HRBroadcastReceiver::class.java)
@@ -125,7 +129,7 @@ internal class MainWorker(
                 .setContentIntent(contentIntent)
                 .addAction(
                     android.R.drawable.ic_delete,
-                    applicationContext.getString(R.string.stop),
+                    resourceHelper.getString(Res.string.stop),
                     stopPendingIntent
                 )
         }
@@ -142,9 +146,9 @@ internal class MainWorker(
         }
     }
 
-    private fun createNotificationChannel() {
-        val name = applicationContext.getString(R.string.channel_1_name)
-        val descriptionText = applicationContext.getString(R.string.channel_1_description)
+    private suspend fun createNotificationChannel() {
+        val name = resourceHelper.getString(Res.string.channel_1_name)
+        val descriptionText = resourceHelper.getString(Res.string.channel_1_description)
         val importance = NotificationManager.IMPORTANCE_LOW
         val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
             description = descriptionText
@@ -152,26 +156,24 @@ internal class MainWorker(
         notificationManager.createNotificationChannel(channel)
     }
 
-    private fun updateNotification(appState: AppState) {
+    private suspend fun updateNotification(appState: AppState) {
         notificationBuilder.apply {
             setContentText(
-                applicationContext.getString(
-                    R.string.bpm,
-                    appState.bpm.toString()
-                )
+                resourceHelper.getFormattedString(Res.string.bpm, appState.bpm)
             )
             setContentTitle(
-                applicationContext.getString(
+                resourceHelper.getString(
                     if (appState.isClientConnected) {
-                        R.string.client_connected
+                        Res.string.client_connected
                     } else {
-                        R.string.awaiting_client
+                        Res.string.awaiting_client
                     }
                 )
             )
         }
     }
 
+    @Suppress("UnnecessaryAbstractClass")
     @WorkerKey(MainWorker::class)
     @ContributesIntoMap(
         AppScope::class,

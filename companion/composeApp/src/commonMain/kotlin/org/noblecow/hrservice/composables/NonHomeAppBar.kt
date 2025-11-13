@@ -12,10 +12,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavHostController
-import org.noblecow.hrservice.R
+import heartratemonitor.composeapp.generated.resources.Res
+import heartratemonitor.composeapp.generated.resources.back_button
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun NonHomeAppBar(
@@ -28,7 +29,7 @@ fun NonHomeAppBar(
     TopAppBar(
         title = {
             Text(
-                stringResource(currentScreen.title),
+                stringResource(currentScreen.titleRes),
                 maxLines = 1,
                 overflow = TextOverflow.Companion.Ellipsis
             )
@@ -39,7 +40,7 @@ fun NonHomeAppBar(
                 IconButton(onClick = { navController.navigateUp() }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back_button)
+                        contentDescription = stringResource(Res.string.back_button)
                     )
                 }
             }

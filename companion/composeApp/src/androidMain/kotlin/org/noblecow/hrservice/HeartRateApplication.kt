@@ -5,33 +5,18 @@ import androidx.work.Configuration
 import dev.zacsweers.metro.createGraphFactory
 import org.noblecow.hrservice.di.AndroidAppGraph
 
-internal class HeartRateApplication :
+class HeartRateApplication :
     Application(),
     Configuration.Provider {
 
-    val appGraph by lazy { createGraphFactory<AndroidAppGraph.Factory>().create(application = this) }
+    internal val appGraph by lazy { createGraphFactory<AndroidAppGraph.Factory>().create(application = this) }
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(appGraph.workerFactory).build()
 
-    /*
     override fun onCreate() {
         super.onCreate()
-
-        // Initialize Koin
-        /*
-        startKoin {
-            androidLogger()
-            androidContext(this@HeartRateApplication)
-            workManagerFactory()
-            modules(AppModule().module)
-        }
-     */
-        initKoin {
-            androidLogger()
-            androidContext(this@HeartRateApplication)
-            workManagerFactory()
-        }
+        // Initialize WorkerCoordinator to manage MainWorker lifecycle
+        appGraph.workerCoordinator.start()
     }
-     */
 }

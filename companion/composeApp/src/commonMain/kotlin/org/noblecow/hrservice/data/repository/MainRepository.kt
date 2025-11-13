@@ -1,13 +1,12 @@
 package org.noblecow.hrservice.data.repository
 
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.loggerConfigInit
+import co.touchlab.kermit.platformLogWriter
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
-import heartratemonitor.composeapp.generated.resources.Res
-import heartratemonitor.composeapp.generated.resources.error_advertise
-import heartratemonitor.composeapp.generated.resources.error_web_server
-import kotlinx.coroutines.CoroutineDispatcher
+import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -15,153 +14,109 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.StringResource
-import org.noblecow.hrservice.data.source.local.AdvertisingState
 import org.noblecow.hrservice.data.source.local.BluetoothLocalDataSource
 import org.noblecow.hrservice.data.source.local.FakeBpmLocalDataSource
 import org.noblecow.hrservice.data.source.local.HardwareState
 import org.noblecow.hrservice.data.source.local.WebServerLocalDataSource
-import org.noblecow.hrservice.data.source.local.WebServerState
 import org.noblecow.hrservice.data.util.DEFAULT_BPM
-import org.noblecow.hrservice.di.IoDispatcher
 
-internal data class AppState(
+data class AppState(
     val bpm: Int = DEFAULT_BPM,
     val isClientConnected: Boolean = false,
     val servicesState: ServicesState = ServicesState.Stopped
 )
 
-internal sealed class ServicesState {
-    data object Starting : ServicesState(), ServicesTransitionState
-    data object Started : ServicesState()
-    data object Stopping : ServicesState(), ServicesTransitionState
-    data object Stopped : ServicesState()
-    data class Error(
-        // val id: Int
-        val text: StringResource
-    ) : ServicesState()
-}
-
-internal interface ServicesTransitionState
-
-internal interface MainRepository {
-    fun getAppStateStream(): StateFlow<AppState>
+interface MainRepository {
+    val appStateFlow: StateFlow<AppState>
     fun getHardwareState(): HardwareState
     fun getMissingPermissions(): Array<out String>
     fun permissionsGranted(): Boolean
     suspend fun startServices()
-    fun stopServices()
+    suspend fun stopServices()
     fun toggleFakeBpm(): Boolean
 }
 
 private const val TAG = "MainRepositoryImpl"
 
 @Suppress("TooManyFunctions")
+@SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 @Inject
 internal class MainRepositoryImpl(
     private val bluetoothLocalDataSource: BluetoothLocalDataSource,
     private val webServerLocalDataSource: WebServerLocalDataSource,
     private val fakeBpmLocalDataSource: FakeBpmLocalDataSource,
-    @IoDispatcher dispatcher: CoroutineDispatcher
+    private val appScope: CoroutineScope,
+    private val logger: Logger = Logger(loggerConfigInit(platformLogWriter()), TAG)
 ) : MainRepository {
 
     private var fakeBpmJob: Job? = null
-    private val localScope: CoroutineScope = CoroutineScope(Job() + dispatcher)
-
-    // private val logger = LoggerFactory.getLogger(TAG)
-    private val logger = Logger.withTag(TAG)
     private val toggleSignalFlow = MutableSharedFlow<Boolean>()
-    private var previousServicesState: ServicesState? = null
+    private val stateMachine = ServicesStateMachine()
 
     private val servicesState: StateFlow<ServicesState> = combine(
-        toggleSignalFlow,
+        toggleSignalFlow.onStart { emit(false) },
         bluetoothLocalDataSource.advertisingState,
         webServerLocalDataSource.webServerState
     ) { _, advertisingState, webServerState ->
-        val newState = getErrorState(advertisingState, webServerState)
-            ?: getNormalState(advertisingState, webServerState)
-        previousServicesState = newState
-        newState
+        Pair(advertisingState, webServerState)
     }
+        .scan(ServicesState.Stopped as ServicesState) { previousState, (advertisingState, webServerState) ->
+            stateMachine.nextState(previousState, advertisingState, webServerState)
+        }
         .stateIn(
-            scope = localScope,
+            scope = appScope,
             started = SharingStarted.Eagerly,
             initialValue = ServicesState.Stopped
         )
 
-    private val bpm: SharedFlow<Int> = webServerLocalDataSource.bpmStream
-        .onEach {
-            if (servicesState.value == ServicesState.Started) {
-                bluetoothLocalDataSource.notifyHeartRate(it)
+    init {
+        // React to state transitions - stop all services when entering Stopping state
+        appScope.launch {
+            servicesState.collect { state ->
+                if (state == ServicesState.Stopping) {
+                    logger.d("Auto-stopping all services due to state transition")
+                    stopAllServices()
+                }
             }
         }
-        // No need to send duplicates upstream after side-effect
-        .stateIn(
-            scope = localScope,
-            started = SharingStarted.WhileSubscribed(),
-            initialValue = 0
+    }
+
+    private val bpm: SharedFlow<Int> = combine(
+        webServerLocalDataSource.bpmFlow.onStart { emit(0) },
+        servicesState
+    ) { bpm, state ->
+        if (state == ServicesState.Started) {
+            bluetoothLocalDataSource.notifyHeartRate(bpm)
+        }
+        bpm
+    }
+        .shareIn(
+            scope = appScope,
+            started = SharingStarted.Eagerly,
+            replay = 1
         )
 
-    private fun getErrorState(
-        advertisingState: AdvertisingState,
-        webServerState: WebServerState
-    ): ServicesState? = when {
-        advertisingState is AdvertisingState.Failure ->
-            ServicesState.Error(Res.string.error_advertise)
-
-        webServerState.error != null ->
-            ServicesState.Error(Res.string.error_web_server)
-
-        else -> null
-    }
-
-    private fun getNormalState(
-        advertisingState: AdvertisingState,
-        webServerState: WebServerState
-    ): ServicesState {
-        val newState = if (advertisingState == AdvertisingState.Stopped &&
-            !webServerState.isRunning
-        ) {
-            ServicesState.Stopped
-        } else if (advertisingState == AdvertisingState.Started && webServerState.isRunning) {
-            ServicesState.Started
-        } else {
-            previousServicesState?.let {
-                when (it) {
-                    ServicesState.Started -> ServicesState.Stopping
-                    ServicesState.Stopped -> ServicesState.Starting
-                    else -> null
-                }
-            } ?: ServicesState.Starting
-        }
-
-        if (newState == ServicesState.Stopping) {
-            localScope.launch {
-                stopAllServices()
-            }
-        }
-
-        return newState
-    }
-
-    override fun getAppStateStream(): StateFlow<AppState> = combine(
+    // var stateCounter = 0 // This was useful for debugging
+    override val appStateFlow = combine(
         servicesState,
         bluetoothLocalDataSource.clientConnectedState,
         bpm
     ) { servicesState, isClientConnected, bpm ->
-        val newState = AppState(
+        AppState(
             servicesState = servicesState,
             isClientConnected = isClientConnected,
             bpm = if (servicesState == ServicesState.Started) bpm else DEFAULT_BPM
+            // counter = stateCounter++
         )
-        newState
     }
         .stateIn(
-            scope = localScope,
+            scope = appScope,
             started = SharingStarted.Eagerly,
             initialValue = AppState()
         )
@@ -173,30 +128,26 @@ internal class MainRepositoryImpl(
     override fun permissionsGranted() = bluetoothLocalDataSource.permissionsGranted()
 
     override suspend fun startServices() {
-        try {
-            check(servicesState.value == ServicesState.Stopped) { servicesState.value }
+        if (servicesState.value == ServicesState.Stopped) {
             toggleSignalFlow.emit(true)
             bluetoothLocalDataSource.startAdvertising()
             webServerLocalDataSource.start()
-        } catch (e: IllegalStateException) {
-            // logger.error(e.localizedMessage, e)
-            logger.e(e.message ?: "", e)
+        } else {
+            logger.i("Services already started")
         }
     }
 
-    override fun stopServices() {
-        try {
-            check(servicesState.value == ServicesState.Started) { servicesState.value }
+    override suspend fun stopServices() {
+        if (servicesState.value != ServicesState.Stopped) {
             stopAllServices()
-        } catch (e: IllegalStateException) {
-            // logger.error(e.localizedMessage, e)
-            logger.e(e.message ?: "", e)
+        } else {
+            logger.i("Services already stopped")
         }
     }
 
-    private fun stopAllServices() {
+    private suspend fun stopAllServices() {
         fakeBpmJob?.cancel()
-        bluetoothLocalDataSource.stop()
+        bluetoothLocalDataSource.stopAdvertising()
         webServerLocalDataSource.stop()
     }
 
@@ -204,11 +155,10 @@ internal class MainRepositoryImpl(
 
     @Suppress("TooGenericExceptionCaught")
     private fun startFakeBpm(): Boolean = if (fakeBpmJob == null && servicesState.value == ServicesState.Started) {
-        fakeBpmJob = localScope.launch {
+        fakeBpmJob = appScope.launch {
             try {
                 fakeBpmLocalDataSource.run()
             } catch (e: Throwable) {
-                // logger.error(error.localizedMessage, error)
                 logger.e(e.message ?: "", e)
             }
         }

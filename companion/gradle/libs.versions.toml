@@ -1,49 +1,44 @@
 [versions]
-aboutLibs = "12.2.4"
+aboutLibs = "13.1.0"
 activity = "1.11.0"
 activity-compose = "1.11.0"
-agp = "8.11.2"
-blessedKotlin = "3.0.9"
-compose-bom = "2025.10.00"
-composeHotReload = "1.0.0-rc01"
-compose-multiplatform = "1.9.0"
+agp = "8.13.1"
+blessedKotlin = "3.0.11"
+compose-bom = "2025.11.00"
+composeHotReload = "1.0.0-rc02"
+compose-multiplatform = "1.9.3"
 compose-rules = "0.4.27"
 detekt = "1.23.8"
 junit = "4.13.2"
-jvm = "17"
-#koin-annotations = "2.2.0"
-#koin-bom = "4.1.1"
+jvm = "21"
 kermit = "2.0.8"
-kotlin = "2.2.20"
+kotlin = "2.2.21"
 kotlinxCoroutines = "1.10.2"
+kover = "0.9.3"
 ksp = "2.2.20-2.0.4"
 ktlint-gradle = "13.1.0"
-ktor = "3.3.1"
+ktor = "3.3.2"
+lifecycleViewmodelCompose = "2.9.6"
 logbackAndroid = "3.0.0"
-logbackClassic = "1.5.19"
+logbackClassic = "1.5.20"
 material = "1.13.0"
 materialIconsCore = "1.7.3"
-metro = "0.6.10"
+metro = "0.7.5"
 mockk = "1.14.6"
-navigation = "2.9.5"
-navigationComposeVersion = "2.9.5"
-slf4jApi = "2.0.17"
+navigationCompose = "2.9.1"
 testRules = "1.7.0"
 testRunner = "1.7.0"
-timber = "5.0.1"
 turbine = "1.2.1"
-workRuntimeKtx = "2.10.5"
+workRuntimeKtx = "2.11.0"
 
 [libraries]
+aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibs" }
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibs" }
 activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity-compose" }
 activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activity" }
-# Compose
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
-androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
-androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-ui-test = { group = "androidx.compose.ui", name = "ui-test" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
@@ -53,20 +48,12 @@ blessed-kotlin = { module = "com.github.weliem:blessed-kotlin", version.ref = "b
 compose-rules-detekt = { module = "io.nlopez.compose.rules:detekt", version.ref = "compose-rules" }
 compose-rules-ktlint = { module = "io.nlopez.compose.rules:ktlint", version.ref = "compose-rules" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
-#koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }
-#koin-core = { module = "io.insert-koin:koin-core" }
-#koin-android = { module = "io.insert-koin:koin-android" }
-#koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose" }
-#koin-androidx-workmanager = { module = "io.insert-koin:koin-androidx-workmanager" }
-#koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations" }
-#koin-ksp-compiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin-annotations" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+kermit-test = { module = "co.touchlab:kermit-test", version.ref = "kermit" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
-kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
-#ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
@@ -79,16 +66,14 @@ ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negoti
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
 logback-android = { module = "com.github.tony19:logback-android", version.ref = "logbackAndroid" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logbackClassic" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
 material-icons-core = { module = "org.jetbrains.compose.material:material-icons-core", version.ref = "materialIconsCore" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 mockk-agent = { module = "io.mockk:mockk-agent", version.ref = "mockk" }
-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationComposeVersion" }
-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigation" }
-slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4jApi" }
-timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 
@@ -102,5 +87,5 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ktlint-gradle = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 metro = { id = "dev.zacsweers.metro", version.ref = "metro" }
