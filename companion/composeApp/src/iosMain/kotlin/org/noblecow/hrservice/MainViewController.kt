@@ -6,7 +6,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.ComposeUIViewController
 import co.touchlab.kermit.Logger
-import co.touchlab.kermit.Severity
 import org.noblecow.hrservice.composables.HomeScreen
 import org.noblecow.hrservice.ui.theme.HeartRateTheme
 
@@ -29,7 +28,7 @@ fun MainViewController() = ComposeUIViewController {
             showStart = true,
             showAwaitingClient = showAwaitingClient,
             bpm = 128,
-            animationEnd = true
+            isHeartBeatPulse = true
         )
     }
 }

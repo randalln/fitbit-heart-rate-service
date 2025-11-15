@@ -14,12 +14,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.noblecow.hrservice.data.repository.MainRepository
+import org.noblecow.hrservice.data.repository.ServiceResult
 import org.noblecow.hrservice.data.repository.ServicesState
+import org.noblecow.hrservice.data.repository.toMessage
 import org.noblecow.hrservice.data.util.DEFAULT_BPM
 import org.noblecow.hrservice.data.util.ResourceHelper
 import org.noblecow.hrservice.di.ViewModelScope
@@ -64,13 +65,6 @@ internal class MainViewModel(
             userMessage = MutableStateFlow(it.userMessage)
         }
 
-        // Create a flow that pairs AppState with a count of emissions
-        val appStateWithCount = mainRepository.appStateFlow
-            .onEach { logger.d("$it") }
-            .scan(Pair(mainRepository.appStateFlow.value, 0)) { (_, count), appState ->
-                Pair(appState, count + 1)
-            }
-
         mainUiState = combine(
             permissionsRequested.onEach {
                 logger.d("permissionsRequested: $it")
@@ -81,16 +75,16 @@ internal class MainViewModel(
             userMessage.onEach {
                 logger.d("userMessage: $it")
             },
-            appStateWithCount
+            mainRepository.appStateFlow
         ) {
                 permissionsRequestedValue,
                 bluetoothEnabled,
                 userMessageValue,
-                (appState, bpmCount)
+                appState
             ->
             MainUiState(
-                bpm = appState.bpm,
-                bpmCount = bpmCount,
+                bpm = appState.bpm.value,
+                bpmCount = appState.bpm.sequenceNumber,
                 bluetoothRequested = bluetoothEnabled,
                 isClientConnected = appState.isClientConnected,
                 permissionsRequested = permissionsRequestedValue,
@@ -115,7 +109,19 @@ internal class MainViewModel(
 
     fun stop() {
         viewModelScope.launch {
-            mainRepository.stopServices()
+            when (val result = mainRepository.stopServices()) {
+                is ServiceResult.Success -> {
+                    logger.d("Services stopped successfully")
+                }
+
+                is ServiceResult.Error -> {
+                    logger.e("Failed to stop services: ${result.error.toMessage()}")
+                    // Show error message to user if not already stopped
+                    if (result.error !is org.noblecow.hrservice.data.repository.ServiceError.AlreadyInState) {
+                        userMessage.update { result.error.toMessage() }
+                    }
+                }
+            }
         }
     }
 

@@ -22,11 +22,13 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -45,11 +47,16 @@ private const val STOP_TIMEOUT_MS = 2000L
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 @Inject
-internal class WebServerLocalDataSourceImpl : WebServerLocalDataSource {
+internal class WebServerLocalDataSourceImpl(appScope: CoroutineScope) : WebServerLocalDataSource {
 
-    // SharedFlow because heart rate can stay the same
-    private val _bpmFlow = MutableSharedFlow<Int>()
-    override val bpmFlow: SharedFlow<Int> = _bpmFlow.asSharedFlow()
+    // BpmReading with sequence number ensures each emission is unique even if BPM value repeats
+    private var bpmSequenceNumber = 0
+    private val _bpmFlow = MutableSharedFlow<BpmReading>()
+    override val bpmFlow: SharedFlow<BpmReading> = _bpmFlow
+        .shareIn(
+            scope = appScope,
+            started = SharingStarted.WhileSubscribed()
+        )
     private var internalKtorState = ApplicationStopped
     private val _webServerState = MutableStateFlow(WebServerState(isReady = false))
     override val webServerState = _webServerState.asStateFlow()
@@ -86,7 +93,12 @@ internal class WebServerLocalDataSourceImpl : WebServerLocalDataSource {
                                     currentRequest = this
                                     try {
                                         withTimeout(BPM_EMIT_TIMEOUT_MS) {
-                                            _bpmFlow.emit(this@run.bpm)
+                                            _bpmFlow.emit(
+                                                BpmReading(
+                                                    value = this@run.bpm,
+                                                    sequenceNumber = ++bpmSequenceNumber
+                                                )
+                                            )
                                         }
                                     } catch (e: Exception) {
                                         call.application.environment.log.error("Failed to emit BPM", e)

@@ -21,10 +21,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -37,11 +36,9 @@ import co.touchlab.kermit.Logger
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 import com.mikepenz.aboutlibraries.ui.compose.produceLibraries
 import heartratemonitor.composeapp.generated.resources.Res
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.noblecow.hrservice.data.repository.ServicesState
-import org.noblecow.hrservice.data.util.ANIMATION_MILLIS
+import org.noblecow.hrservice.data.util.ANIMATION_MS
 import org.noblecow.hrservice.viewmodel.MainViewModel
 import org.noblecow.hrservice.viewmodel.metroViewModel
 
@@ -56,45 +53,28 @@ internal fun HeartRateApp(
     val viewModel = metroViewModel<MainViewModel>()
     val logger = Logger.withTag(TAG)
     val uiState by viewModel.mainUiState.collectAsState()
-    val permissionsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        viewModel.receivePermissions(permissions)
-    }
-    val enableBluetoothLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
+
+    PermissionHandler(
+        permissionsRequested = uiState.permissionsRequested,
+        onPermissionsResult = { permissions ->
+            viewModel.receivePermissions(permissions)
+        },
+        logger = logger
+    )
+
+    BluetoothHandler(
+        bluetoothRequested = uiState.bluetoothRequested,
+        logger = logger,
+        onEnable = { viewModel.start() }
     ) {
-        if (it.resultCode != Activity.RESULT_OK) {
-            viewModel.userDeclinedBluetoothEnable()
-        } else {
-            viewModel.start()
-        }
-    }
-
-    // Side-effects
-    uiState.permissionsRequested?.let {
-        LaunchedEffect(uiState) {
-            logger.d("Requesting permissions: $it")
-            permissionsLauncher.launch(it.toTypedArray())
-        }
-    }
-
-    uiState.bluetoothRequested?.let {
-        if (it) {
-            LaunchedEffect(uiState) {
-                logger.d("Need to enable bluetooth")
-                val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                enableBluetoothLauncher.launch(intent)
-            }
-        }
+        viewModel.userDeclinedBluetoothEnable()
     }
 
     // Get current back stack entry
     val backStackEntry by navController.currentBackStackEntryAsState()
-    // Get the name of the current screen
-    val currentScreen = HeartRateScreen.valueOf(
-        backStackEntry?.destination?.route ?: HeartRateScreen.Home.name
-    )
+    val currentScreen = HeartRateScreen.entries.find {
+        it.name == backStackEntry?.destination?.route
+    } ?: HeartRateScreen.Home
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -102,13 +82,11 @@ internal fun HeartRateApp(
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
             rememberTopAppBarState()
         )
-        val scope = rememberCoroutineScope()
         val snackbarHostState = remember { SnackbarHostState() }
-        var animationEnd by remember { mutableStateOf(false) }
-        var localBpmCount by remember { mutableIntStateOf(uiState.bpmCount) }
+        var animationEnd by rememberSaveable { mutableStateOf(false) }
 
         Scaffold(
-            modifier = Modifier.Companion
+            modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = {
@@ -129,42 +107,92 @@ internal fun HeartRateApp(
                 startDestination = HeartRateScreen.Home.name,
                 modifier = Modifier
                     .fillMaxSize()
-                    // .verticalScroll(rememberScrollState())
                     .padding(innerPadding)
             ) {
-                val bpmJob = scope.launch(start = CoroutineStart.LAZY) {
-                    delay(ANIMATION_MILLIS)
-                    animationEnd = true
-                }
                 composable(route = HeartRateScreen.Home.name) {
+                    LaunchedEffect(uiState.bpmCount) {
+                        if (uiState.bpmCount != 0) {
+                            animationEnd = false
+                            delay(ANIMATION_MS)
+                            animationEnd = true
+                        }
+                    }
+
                     HomeScreen(
                         onStartClick = { viewModel.start() },
                         onStopClick = { viewModel.stop() },
                         showAwaitingClient = uiState.servicesState == ServicesState.Started &&
                             !uiState.isClientConnected,
                         bpm = uiState.bpm,
-                        animationEnd = animationEnd,
+                        isHeartBeatPulse = animationEnd,
                         showStart = uiState.servicesState == ServicesState.Stopped
                     )
-                    if (localBpmCount != 0 && localBpmCount != uiState.bpmCount) {
-                        bpmJob.start()
-                        animationEnd = false
-                    }
-                    localBpmCount = uiState.bpmCount
                 }
                 composable(route = HeartRateScreen.OpenSource.name) {
                     val libraries by produceLibraries {
-                        Res.readBytes("files/aboutlibraries.json").decodeToString()
+                        runCatching {
+                            Res.readBytes("files/aboutlibraries.json").decodeToString()
+                        }.getOrElse {
+                            logger.e("Failed to load libraries", it)
+                            "{}" // Empty JSON fallback
+                        }
                     }
-                    LibrariesContainer(libraries, Modifier.Companion.fillMaxSize())
-                }
-                uiState.userMessage?.let {
-                    scope.launch {
-                        snackbarHostState.showSnackbar(message = it)
-                        viewModel.userMessageShown()
-                    }
+                    LibrariesContainer(libraries, Modifier.fillMaxSize())
                 }
             }
+
+            LaunchedEffect(uiState.userMessage) {
+                uiState.userMessage?.let { message ->
+                    snackbarHostState.showSnackbar(message = message)
+                    viewModel.userMessageShown()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PermissionHandler(
+    permissionsRequested: List<String>?,
+    onPermissionsResult: (Map<String, Boolean>) -> Unit,
+    logger: Logger
+) {
+    val permissionsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        onPermissionsResult(permissions)
+    }
+
+    permissionsRequested?.let { permissions ->
+        LaunchedEffect(permissions) {
+            logger.d("Requesting permissions: $permissions")
+            permissionsLauncher.launch(permissions.toTypedArray())
+        }
+    }
+}
+
+@Composable
+private fun BluetoothHandler(
+    bluetoothRequested: Boolean?,
+    logger: Logger,
+    onEnable: () -> Unit,
+    onDecline: () -> Unit
+) {
+    val enableBluetoothLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        if (it.resultCode != Activity.RESULT_OK) {
+            onDecline()
+        } else {
+            onEnable()
+        }
+    }
+
+    if (bluetoothRequested == true) {
+        LaunchedEffect(true) {
+            logger.d("Need to enable bluetooth")
+            val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            enableBluetoothLauncher.launch(intent)
         }
     }
 }

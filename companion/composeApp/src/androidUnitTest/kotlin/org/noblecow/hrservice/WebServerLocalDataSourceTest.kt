@@ -13,6 +13,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -20,9 +22,11 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.noblecow.hrservice.data.source.local.BpmReading
 import org.noblecow.hrservice.data.source.local.Request
 import org.noblecow.hrservice.data.source.local.WebServerLocalDataSource
 import org.noblecow.hrservice.data.source.local.WebServerLocalDataSourceImpl
@@ -38,7 +42,8 @@ class WebServerLocalDataSourceTest {
 
     @Before
     fun before() {
-        webServerLocalDataSource = WebServerLocalDataSourceImpl()
+        val testScope = CoroutineScope(SupervisorJob() + mainDispatcherRule.testDispatcher)
+        webServerLocalDataSource = WebServerLocalDataSourceImpl(testScope)
     }
 
     @After
@@ -52,11 +57,13 @@ class WebServerLocalDataSourceTest {
                 }
                 // Netty stop() has gracePeriod=1000ms + timeout=2000ms
                 // We need to wait for the full shutdown cycle plus OS cleanup
-                // Total: 2000ms (Netty) + 500ms (OS) = 2500ms
-                delay(2500)
+                // Extended delay to ensure port is fully released between test variants
+                // Total: 2000ms (Netty) + 8000ms (OS + test variant cleanup) = 10000ms
+                delay(5000)
             } catch (e: Exception) {
                 // Ignore cleanup errors but still delay to prevent port conflicts
-                delay(2500)
+                println("Cleanup error: ${e.message}")
+                delay(10000)
             }
         }
     }
@@ -69,7 +76,7 @@ class WebServerLocalDataSourceTest {
         webServerLocalDataSource.start()
 
         webServerLocalDataSource.webServerState.test {
-            Assert.assertEquals(
+            assertEquals(
                 WebServerState(error = null, isReady = true),
                 awaitItem()
             )
@@ -85,7 +92,7 @@ class WebServerLocalDataSourceTest {
         webServerLocalDataSource.stop()
 
         webServerLocalDataSource.webServerState.test {
-            Assert.assertEquals(
+            assertEquals(
                 WebServerState(error = null, isReady = false),
                 awaitItem()
             )
@@ -117,7 +124,7 @@ class WebServerLocalDataSourceTest {
             setBody(Request(42))
         }
 
-        Assert.assertEquals(HttpStatusCode.NotFound, response.status)
+        assertEquals(HttpStatusCode.NotFound, response.status)
     }
 
     @Test
@@ -126,7 +133,7 @@ class WebServerLocalDataSourceTest {
         webServerLocalDataSource.stop()
 
         webServerLocalDataSource.webServerState.test {
-            Assert.assertEquals(
+            assertEquals(
                 WebServerState(error = null, isReady = false),
                 awaitItem()
             )
@@ -139,13 +146,13 @@ class WebServerLocalDataSourceTest {
 
         webServerLocalDataSource.bpmFlow.test {
             sendBpm(60)
-            Assert.assertEquals(60, awaitItem())
+            assertEquals(BpmReading(value = 60, sequenceNumber = 1), awaitItem())
 
             sendBpm(75)
-            Assert.assertEquals(75, awaitItem())
+            assertEquals(BpmReading(value = 75, sequenceNumber = 2), awaitItem())
 
             sendBpm(90)
-            Assert.assertEquals(90, awaitItem())
+            assertEquals(BpmReading(value = 90, sequenceNumber = 3), awaitItem())
         }
     }
 
@@ -160,16 +167,16 @@ class WebServerLocalDataSourceTest {
         }
         val response: HttpResponse = client.get("http://localhost:$PORT_LISTEN/")
 
-        Assert.assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(HttpStatusCode.OK, response.status)
         val body = response.body<Map<String, String>>()
-        Assert.assertEquals("OK", body["status"])
+        assertEquals("OK", body["status"])
     }
 
     @Test
     fun `Initial webServerState has isReady false`() = runTest {
         webServerLocalDataSource.webServerState.test {
             val state = awaitItem()
-            Assert.assertEquals(false, state.isReady)
+            assertEquals(false, state.isReady)
             Assert.assertNull(state.error)
         }
     }

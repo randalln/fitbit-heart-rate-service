@@ -7,6 +7,9 @@ import dev.zacsweers.metro.SingleIn
 import heartratemonitor.composeapp.generated.resources.Res
 import heartratemonitor.composeapp.generated.resources.error_hardware
 import org.noblecow.hrservice.data.repository.MainRepository
+import org.noblecow.hrservice.data.repository.ServiceError
+import org.noblecow.hrservice.data.repository.ServiceResult
+import org.noblecow.hrservice.data.repository.toMessage
 import org.noblecow.hrservice.data.source.local.HardwareState
 import org.noblecow.hrservice.data.util.PermissionsHelper
 import org.noblecow.hrservice.data.util.ResourceHelper
@@ -48,8 +51,20 @@ internal class StartServicesUseCaseImpl(
             HardwareState.DISABLED -> StartServiceResult.BluetoothDisabled
 
             HardwareState.READY -> {
-                mainRepository.startServices()
-                StartServiceResult.Starting
+                when (val result = mainRepository.startServices()) {
+                    is ServiceResult.Success -> StartServiceResult.Starting
+
+                    is ServiceResult.Error -> when (result.error) {
+                        is ServiceError.PermissionError -> StartServiceResult.PermissionsNeeded(
+                            listOf(result.error.permission)
+                        )
+
+                        is ServiceError.AlreadyInState -> StartServiceResult.Starting
+
+                        // Already started is OK
+                        else -> StartServiceResult.HardwareError(result.error.toMessage())
+                    }
+                }
             }
         }
     }

@@ -251,3 +251,13 @@ tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
 tasks.withType<io.gitlab.arturbosch.detekt.DetektCreateBaselineTask>().configureEach {
     exclude("**/generated/**")
 }
+
+// Ensure test tasks run sequentially to avoid port conflicts
+// WebServerLocalDataSourceTest uses a fixed port (12345) across all test variants
+tasks.withType<Test>().configureEach {
+    maxParallelForks = 1
+    // Add delay between test classes to allow port cleanup
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
+}

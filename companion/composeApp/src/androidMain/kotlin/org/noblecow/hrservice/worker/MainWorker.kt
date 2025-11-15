@@ -159,7 +159,7 @@ internal class MainWorker(
     private suspend fun updateNotification(appState: AppState) {
         notificationBuilder.apply {
             setContentText(
-                resourceHelper.getFormattedString(Res.string.bpm, appState.bpm)
+                resourceHelper.getFormattedString(Res.string.bpm, appState.bpm.value)
             )
             setContentTitle(
                 resourceHelper.getString(

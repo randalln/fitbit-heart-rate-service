@@ -8,48 +8,86 @@ import androidx.compose.runtime.Composable
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
+    onPrimary = OnPurple80,
+    primaryContainer = PurpleContainer80,
+    onPrimaryContainer = OnPurple80,
     secondary = PurpleGrey80,
-    tertiary = Pink80
+    onSecondary = OnPurpleGrey80,
+    secondaryContainer = PurpleGreyContainer80,
+    onSecondaryContainer = OnPurpleGrey80,
+    tertiary = Pink80,
+    onTertiary = OnPink80,
+    tertiaryContainer = PinkContainer80,
+    onTertiaryContainer = OnPink80,
+    error = Error80,
+    onError = OnError80,
+    errorContainer = ErrorContainer80,
+    onErrorContainer = OnErrorContainer80,
+    background = Surface80,
+    onBackground = OnSurface80,
+    surface = Surface80,
+    onSurface = OnSurface80,
+    surfaceVariant = SurfaceVariant80,
+    onSurfaceVariant = OnSurfaceVariant80,
+    outline = Outline80,
+    outlineVariant = OutlineVariant80,
+    inverseSurface = InverseSurface80,
+    inverseOnSurface = InverseOnSurface80,
+    inversePrimary = InversePrimary80,
+    scrim = Scrim
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = Purple40,
+    onPrimary = OnPurple40,
+    primaryContainer = PurpleContainer40,
+    onPrimaryContainer = OnPurple40,
     secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-     */
+    onSecondary = OnPurpleGrey40,
+    secondaryContainer = PurpleGreyContainer40,
+    onSecondaryContainer = OnPurpleGrey40,
+    tertiary = Pink40,
+    onTertiary = OnPink40,
+    tertiaryContainer = PinkContainer40,
+    onTertiaryContainer = OnPink40,
+    error = Error40,
+    onError = OnError40,
+    errorContainer = ErrorContainer40,
+    onErrorContainer = OnErrorContainer40,
+    background = Surface40,
+    onBackground = OnSurface40,
+    surface = Surface40,
+    onSurface = OnSurface40,
+    surfaceVariant = SurfaceVariant40,
+    onSurfaceVariant = OnSurfaceVariant40,
+    outline = Outline40,
+    outlineVariant = OutlineVariant40,
+    inverseSurface = InverseSurface40,
+    inverseOnSurface = InverseOnSurface40,
+    inversePrimary = InversePrimary40,
+    scrim = Scrim
 )
 
+/**
+ * Heart Rate Monitor theme wrapper that provides Material Design 3 theming.
+ *
+ * Automatically adapts to the system's dark/light theme preference using
+ * [isSystemInDarkTheme]. Applies consistent color schemes and typography
+ * throughout the application.
+ *
+ * @param darkTheme Whether to use dark theme. Defaults to system preference.
+ * @param content The composable content to be themed.
+ *
+ * @see DarkColorScheme
+ * @see LightColorScheme
+ */
 @Composable
 fun HeartRateTheme(
-    // darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    // dynamicColor: Boolean = true,
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    /*
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-
-        else -> LightColorScheme
-    }
-     */
-
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) DarkColorScheme else LightColorScheme,
+        colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
         typography = Typography,
         content = content
     )

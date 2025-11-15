@@ -18,6 +18,20 @@ import heartratemonitor.composeapp.generated.resources.Res
 import heartratemonitor.composeapp.generated.resources.back_button
 import org.jetbrains.compose.resources.stringResource
 
+/**
+ * Top app bar for non-home screens with back navigation support.
+ *
+ * Displays the current screen title and a back arrow button (if navigation
+ * is available) that allows users to navigate up in the navigation hierarchy.
+ *
+ * @param scrollBehavior Defines the scroll behavior for the app bar (e.g., pinned, collapsing).
+ * @param currentScreen The current screen being displayed, used to show the appropriate title.
+ * @param canNavigateBack Whether to show the back button. Only shown if there's a previous screen in the back stack.
+ * @param navController Navigation controller used to navigate back when the back button is pressed.
+ * @param modifier Optional modifier for this composable.
+ *
+ * @see HeartRateAppBar
+ */
 @Composable
 fun NonHomeAppBar(
     scrollBehavior: TopAppBarScrollBehavior,
@@ -31,7 +45,7 @@ fun NonHomeAppBar(
             Text(
                 stringResource(currentScreen.titleRes),
                 maxLines = 1,
-                overflow = TextOverflow.Companion.Ellipsis
+                overflow = TextOverflow.Ellipsis
             )
         },
         scrollBehavior = scrollBehavior,

@@ -3,7 +3,6 @@
 package org.noblecow.hrservice.composables
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
@@ -22,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavHostController
 import heartratemonitor.composeapp.generated.resources.Res
-import heartratemonitor.composeapp.generated.resources.back_button
 import heartratemonitor.composeapp.generated.resources.menu
 import heartratemonitor.composeapp.generated.resources.open_source
 import heartratemonitor.composeapp.generated.resources.toggle_fake_bpm
@@ -32,7 +30,6 @@ import org.jetbrains.compose.resources.stringResource
 internal fun HomeAppBar(
     scrollBehavior: TopAppBarScrollBehavior,
     currentScreen: HeartRateScreen,
-    canNavigateBack: Boolean,
     navController: NavHostController,
     onFakeBpmClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -44,7 +41,7 @@ internal fun HomeAppBar(
             Text(
                 stringResource(currentScreen.titleRes),
                 maxLines = 1,
-                overflow = TextOverflow.Companion.Ellipsis
+                overflow = TextOverflow.Ellipsis
             )
         },
         actions = {
@@ -69,7 +66,7 @@ internal fun HomeAppBar(
                 )
                 DropdownMenuItem(
                     onClick = {
-                        onFakeBpmClick.invoke()
+                        onFakeBpmClick()
                         menuExpanded = false
                     },
                     text = {
@@ -79,16 +76,6 @@ internal fun HomeAppBar(
             }
         },
         scrollBehavior = scrollBehavior,
-        navigationIcon = {
-            if (canNavigateBack) {
-                IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(Res.string.back_button)
-                    )
-                }
-            }
-        },
         modifier = modifier
     )
 }
