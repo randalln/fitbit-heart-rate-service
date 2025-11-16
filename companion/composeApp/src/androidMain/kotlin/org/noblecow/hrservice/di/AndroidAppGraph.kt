@@ -17,7 +17,7 @@ import org.noblecow.hrservice.worker.WorkerCoordinator
 
 @DependencyGraph(
     AppScope::class,
-    bindingContainers = [CoroutineProviders::class]
+    bindingContainers = [CoroutineProviders::class, LoggerProviders::class]
 )
 internal interface AndroidAppGraph :
     AppGraph,
