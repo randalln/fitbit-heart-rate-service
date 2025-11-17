@@ -1,12 +1,16 @@
 package org.noblecow.hrservice.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
 
-private val DarkColorScheme = darkColorScheme(
+/**
+ * Android Material Design 3 dark color scheme.
+ */
+private val AndroidDarkColorScheme = darkColorScheme(
     primary = Purple80,
     onPrimary = OnPurple80,
     primaryContainer = PurpleContainer80,
@@ -37,7 +41,10 @@ private val DarkColorScheme = darkColorScheme(
     scrim = Scrim
 )
 
-private val LightColorScheme = lightColorScheme(
+/**
+ * Android Material Design 3 light color scheme.
+ */
+private val AndroidLightColorScheme = lightColorScheme(
     primary = Purple40,
     onPrimary = OnPurple40,
     primaryContainer = PurpleContainer40,
@@ -69,28 +76,23 @@ private val LightColorScheme = lightColorScheme(
 )
 
 /**
- * Heart Rate Monitor theme wrapper that provides platform-aware Material Design 3 theming.
- *
- * Automatically adapts to:
- * - System's dark/light theme preference using [isSystemInDarkTheme]
- * - Platform-specific colors (Material on Android, iOS system colors on iOS)
- * - Platform-specific shapes (Material corner radii on Android, iOS corner radii on iOS)
- *
- * @param darkTheme Whether to use dark theme. Defaults to system preference.
- * @param content The composable content to be themed.
- *
- * @see platformColorScheme
- * @see platformShapes
+ * Android Material Design 3 shapes (default Material3 corner radii).
  */
-@Composable
-fun HeartRateTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
-) {
-    MaterialTheme(
-        colorScheme = platformColorScheme(darkTheme),
-        typography = Typography,
-        shapes = platformShapes(),
-        content = content
-    )
-}
+private val AndroidShapes = Shapes(
+    extraSmall = RoundedCornerShape(4.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(16.dp),
+    extraLarge = RoundedCornerShape(28.dp)
+)
+
+/**
+ * Returns Android Material Design 3 color scheme.
+ */
+actual fun platformColorScheme(darkTheme: Boolean): ColorScheme =
+    if (darkTheme) AndroidDarkColorScheme else AndroidLightColorScheme
+
+/**
+ * Returns Android Material Design 3 shapes.
+ */
+actual fun platformShapes(): Shapes = AndroidShapes

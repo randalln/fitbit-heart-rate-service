@@ -19,10 +19,15 @@ import heartratemonitor.composeapp.generated.resources.back_button
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Top app bar for non-home screens with back navigation support.
+ * Android implementation of non-home app bar using Material Design 3.
  *
- * Displays the current screen title and a back arrow button (if navigation
- * is available) that allows users to navigate up in the navigation hierarchy.
+ * Displays a standard Material 3 top app bar with:
+ * - Left-aligned title
+ * - Material back arrow for navigation
+ *
+ * Uses Material 3 components:
+ * - TopAppBar for the app bar
+ * - Material icon for back navigation (AutoMirrored.Filled.ArrowBack)
  *
  * @param scrollBehavior Defines the scroll behavior for the app bar (e.g., pinned, collapsing).
  * @param currentScreen The current screen being displayed, used to show the appropriate title.
@@ -33,12 +38,12 @@ import org.jetbrains.compose.resources.stringResource
  * @see HeartRateAppBar
  */
 @Composable
-fun NonHomeAppBar(
+actual fun NonHomeAppBar(
     scrollBehavior: TopAppBarScrollBehavior,
     currentScreen: HeartRateScreen,
     canNavigateBack: Boolean,
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier
 ) {
     TopAppBar(
         title = {

@@ -26,13 +26,31 @@ import heartratemonitor.composeapp.generated.resources.open_source
 import heartratemonitor.composeapp.generated.resources.toggle_fake_bpm
 import org.jetbrains.compose.resources.stringResource
 
+/**
+ * Android implementation of home app bar using Material Design 3.
+ *
+ * Displays a centered top app bar with a dropdown menu for actions:
+ * - Navigate to Open Source licenses screen
+ * - Toggle fake BPM generation
+ *
+ * Uses Material 3 components:
+ * - CenterAlignedTopAppBar for the app bar
+ * - DropdownMenu for the overflow menu
+ * - Material icons (three-dot overflow)
+ *
+ * @param scrollBehavior Defines the scroll behavior for the app bar.
+ * @param currentScreen The current screen being displayed.
+ * @param navController Navigation controller for screen navigation.
+ * @param onFakeBpmClick Callback invoked when the "Toggle Fake BPM" menu item is selected.
+ * @param modifier Optional modifier for this composable.
+ */
 @Composable
-internal fun HomeAppBar(
+actual fun HomeAppBar(
     scrollBehavior: TopAppBarScrollBehavior,
     currentScreen: HeartRateScreen,
     navController: NavHostController,
     onFakeBpmClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 

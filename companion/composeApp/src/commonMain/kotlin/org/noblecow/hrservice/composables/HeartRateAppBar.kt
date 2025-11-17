@@ -14,6 +14,10 @@ import androidx.navigation.NavHostController
  * Routes to either [HomeAppBar] for the home screen (with menu actions)
  * or [NonHomeAppBar] for other screens (with back navigation).
  *
+ * Platform-specific implementations:
+ * - Android: Material 3 TopAppBar with dropdown menu
+ * - iOS: iOS-style navigation bar with action sheet menu
+ *
  * @param scrollBehavior Defines the scroll behavior for the app bar (e.g., pinned, collapsing).
  * @param currentScreen The current screen being displayed, determines which app bar variant to show.
  * @param canNavigateBack Whether the back button should be shown (applies to non-home screens).
@@ -48,3 +52,45 @@ fun HeartRateAppBar(
         )
     }
 }
+
+/**
+ * Platform-specific home app bar implementation.
+ *
+ * - Android: Material 3 CenterAlignedTopAppBar with dropdown menu
+ * - iOS: iOS-style TopAppBar with action sheet menu
+ *
+ * @param scrollBehavior Defines the scroll behavior for the app bar.
+ * @param currentScreen The current screen being displayed.
+ * @param navController Navigation controller for screen navigation.
+ * @param onFakeBpmClick Callback invoked when the "Toggle Fake BPM" menu item is selected.
+ * @param modifier Optional modifier for this composable.
+ */
+@Composable
+expect fun HomeAppBar(
+    scrollBehavior: TopAppBarScrollBehavior,
+    currentScreen: HeartRateScreen,
+    navController: NavHostController,
+    onFakeBpmClick: () -> Unit,
+    modifier: Modifier = Modifier
+)
+
+/**
+ * Platform-specific non-home app bar implementation.
+ *
+ * - Android: Material 3 TopAppBar with Material back arrow
+ * - iOS: iOS-style TopAppBar with iOS back chevron
+ *
+ * @param scrollBehavior Defines the scroll behavior for the app bar.
+ * @param currentScreen The current screen being displayed.
+ * @param canNavigateBack Whether the back button should be shown.
+ * @param navController Navigation controller for navigation.
+ * @param modifier Optional modifier for this composable.
+ */
+@Composable
+expect fun NonHomeAppBar(
+    scrollBehavior: TopAppBarScrollBehavior,
+    currentScreen: HeartRateScreen,
+    canNavigateBack: Boolean,
+    navController: NavHostController,
+    modifier: Modifier = Modifier
+)
