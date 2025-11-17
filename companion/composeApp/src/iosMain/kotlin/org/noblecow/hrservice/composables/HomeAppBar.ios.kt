@@ -63,7 +63,9 @@ actual fun HomeAppBar(
     // iOS action sheet for menu items
     IosActionMenu(
         visible = showActionSheet,
-        navController = navController,
+        onOpenSourceClick = {
+            navController.navigate(HeartRateScreen.OpenSource.name)
+        },
         onFakeBpmClick = onFakeBpmClick,
         onDismiss = {
             scope.launch {

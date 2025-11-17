@@ -5,13 +5,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,16 +22,27 @@ import androidx.compose.ui.semantics.semantics
 import heartratemonitor.composeapp.generated.resources.Res
 import heartratemonitor.composeapp.generated.resources.awaiting_client
 import heartratemonitor.composeapp.generated.resources.ic_heart
-import heartratemonitor.composeapp.generated.resources.start
-import heartratemonitor.composeapp.generated.resources.stop
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.noblecow.hrservice.ui.theme.HeartRateTheme
 import org.noblecow.hrservice.ui.theme.Tokens
 
+/**
+ * Platform-specific home screen implementation.
+ *
+ * Displays heart rate monitoring interface with platform-appropriate button styling:
+ * - Android: Material 3 Button
+ * - iOS: iOS-style button (IosButton)
+ *
+ * @param onStartClick Callback when the start button is clicked.
+ * @param onStopClick Callback when the stop button is clicked.
+ * @param showAwaitingClient Whether to show the "Awaiting Client" message.
+ * @param bpm Current heart rate in beats per minute.
+ * @param isHeartBeatPulse Whether the heart animation should pulse.
+ * @param showStart Whether to show the start button (true) or stop button (false).
+ * @param modifier Optional modifier for this composable.
+ */
 @Composable
-internal fun HomeScreen(
+expect fun HomeScreen(
     onStartClick: () -> Unit,
     onStopClick: () -> Unit,
     showAwaitingClient: Boolean,
@@ -41,6 +50,27 @@ internal fun HomeScreen(
     isHeartBeatPulse: Boolean,
     showStart: Boolean,
     modifier: Modifier = Modifier
+)
+
+/**
+ * Shared home screen content layout.
+ *
+ * Displays the heart rate monitoring UI with animated heart icon and BPM display.
+ * Platform-specific button implementations should be provided via the [actionButton] parameter.
+ *
+ * @param showAwaitingClient Whether to show the "Awaiting Client" message.
+ * @param bpm Current heart rate in beats per minute.
+ * @param isHeartBeatPulse Whether the heart animation should pulse.
+ * @param modifier Optional modifier for this composable.
+ * @param actionButton Platform-specific button composable (Start or Stop).
+ */
+@Composable
+internal fun HomeScreenContent(
+    showAwaitingClient: Boolean,
+    bpm: Int,
+    isHeartBeatPulse: Boolean,
+    modifier: Modifier = Modifier,
+    actionButton: @Composable ColumnScope.() -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.Center,
@@ -83,60 +113,6 @@ internal fun HomeScreen(
                 }
             )
         }
-        if (showStart) {
-            Button(
-                onClick = onStartClick,
-                modifier = Modifier.wrapContentSize()
-            ) {
-                Text(text = stringResource(Res.string.start))
-            }
-        } else {
-            Button(
-                onClick = onStopClick,
-                modifier = Modifier.wrapContentSize()
-            ) {
-                Text(text = stringResource(Res.string.stop))
-            }
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun HomeScreenLightPreview() {
-    HeartRateTheme(darkTheme = false) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            HomeScreen(
-                onStartClick = { },
-                onStopClick = { },
-                showStart = true,
-                showAwaitingClient = true,
-                bpm = 128,
-                isHeartBeatPulse = true
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun HomeScreenDarkPreview() {
-    HeartRateTheme(darkTheme = true) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            HomeScreen(
-                onStartClick = { },
-                onStopClick = { },
-                showStart = true,
-                showAwaitingClient = true,
-                bpm = 128,
-                isHeartBeatPulse = true
-            )
-        }
+        actionButton()
     }
 }

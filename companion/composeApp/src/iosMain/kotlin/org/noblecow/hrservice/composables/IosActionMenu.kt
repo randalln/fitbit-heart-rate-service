@@ -2,10 +2,8 @@
 
 package org.noblecow.hrservice.composables
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,12 +17,9 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import heartratemonitor.composeapp.generated.resources.Res
 import heartratemonitor.composeapp.generated.resources.open_source
 import heartratemonitor.composeapp.generated.resources.toggle_fake_bpm
@@ -43,7 +38,7 @@ import org.noblecow.hrservice.ui.theme.Tokens
  *
  * @param visible Whether the action sheet is currently visible.
  * @param sheetState State of the modal bottom sheet.
- * @param navController Navigation controller for navigating to other screens.
+ * @param onOpenSourceClick Callback when "Open Source Libraries" is clicked.
  * @param onFakeBpmClick Callback when "Toggle Fake BPM" is clicked.
  * @param onDismiss Callback when the sheet is dismissed.
  * @param modifier Optional modifier for this composable.
@@ -51,7 +46,7 @@ import org.noblecow.hrservice.ui.theme.Tokens
 @Composable
 internal fun IosActionMenu(
     visible: Boolean,
-    navController: NavHostController,
+    onOpenSourceClick: () -> Unit,
     onFakeBpmClick: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -79,7 +74,7 @@ internal fun IosActionMenu(
                 IosActionMenuItem(
                     text = stringResource(Res.string.open_source),
                     onClick = {
-                        navController.navigate(HeartRateScreen.OpenSource.name)
+                        onOpenSourceClick()
                         onDismiss()
                     }
                 )
@@ -111,6 +106,11 @@ internal fun IosActionMenu(
 /**
  * Individual menu item in the iOS action sheet.
  *
+ * Uses IosTextButton for iOS-native button styling with:
+ * - 44pt minimum touch target (iOS HIG compliance)
+ * - iOS-appropriate padding
+ * - Accessible button semantics
+ *
  * @param text The text to display for this menu item.
  * @param onClick Callback when this menu item is clicked.
  * @param modifier Optional modifier for this composable.
@@ -121,23 +121,15 @@ private fun IosActionMenuItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(
-                horizontal = Tokens.IosTokens.Spacing.Medium,
-                vertical = Tokens.IosTokens.Spacing.Medium
-            ),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+    IosTextButton(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth()
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Normal,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
