@@ -3,8 +3,6 @@ package org.noblecow.hrservice.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
-import co.touchlab.kermit.loggerConfigInit
-import co.touchlab.kermit.platformLogWriter
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import heartratemonitor.composeapp.generated.resources.Res
@@ -48,8 +46,9 @@ internal class MainViewModel(
     private val mainRepository: MainRepository,
     private val startServicesUseCase: StartServicesUseCase,
     private val resourceHelper: ResourceHelper,
-    private val logger: Logger = Logger(loggerConfigInit(platformLogWriter()), TAG)
+    defaultLogger: Logger
 ) : ViewModel() {
+    private val logger = defaultLogger.withTag(TAG)
 
     val mainUiState: StateFlow<MainUiState>
 

@@ -1,5 +1,6 @@
 package org.noblecow.hrservice.data.source.local
 
+import co.touchlab.kermit.Logger
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
@@ -21,21 +22,27 @@ import org.noblecow.hrservice.data.util.PORT_LISTEN
 
 private const val STOP_GRACE_PERIOD_MS = 1000L
 private const val STOP_TIMEOUT_MS = 2000L
+private const val TAG = "WebServerLocalDataSourceImpl"
 
 /**
- * Android implementation of WebServerLocalDataSource using Netty engine.
+ * iOS implementation of WebServerLocalDataSource using CIO engine.
  *
  * Delegates common server logic to [KtorServerManager] while handling
- * Android-specific lifecycle and state management.
+ * iOS-specific lifecycle and state management. Uses Kermit logger for
+ * Xcode console visibility.
  */
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 @Inject
-internal class WebServerLocalDataSourceImpl(appScope: CoroutineScope) : WebServerLocalDataSource {
+internal class WebServerLocalDataSourceImpl(
+    appScope: CoroutineScope,
+    logger: Logger
+) : WebServerLocalDataSource {
+    private val logger = logger.withTag(TAG)
 
     private val serverManager = KtorServerManager(
         config = KtorServerConfig(),
-        logger = null // Android uses Ktor's CallLogging plugin instead
+        logger = this.logger
     )
 
     // BpmReading with sequence number ensures each emission is unique even if BPM value repeats

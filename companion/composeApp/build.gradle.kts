@@ -15,6 +15,8 @@
  */
 @file:Suppress("UnstableApiUsage")
 
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import java.io.FileInputStream
 import java.util.Properties
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
@@ -33,11 +35,6 @@ plugins {
     alias(libs.plugins.kover)
     alias(libs.plugins.ktlint.gradle)
     alias(libs.plugins.metro)
-}
-
-detekt {
-    buildUponDefaultConfig = true
-    config.setFrom("$rootDir/config/detekt/config.yml")
 }
 
 ktlint {
@@ -98,7 +95,6 @@ kotlin {
             implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx)
-            implementation(libs.ktor.server.cio)
             implementation(libs.ktor.server.content.negotiation)
             implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.status.pages)
@@ -244,12 +240,28 @@ aboutLibraries {
     }
 }
 
-tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom("$rootDir/config/detekt/config.yml")
+}
+
+tasks.withType<Detekt>().configureEach {
+    exclude("**/generated/**")
+    config.setFrom("$rootDir/config/detekt/config.yml")
+}
+
+tasks.withType<DetektCreateBaselineTask>().configureEach {
     exclude("**/generated/**")
 }
 
-tasks.withType<io.gitlab.arturbosch.detekt.DetektCreateBaselineTask>().configureEach {
-    exclude("**/generated/**")
+tasks.register<Detekt>("detektCommonMain") {
+    description = "Run detekt on commonMain (KMP)"
+    group = "verification"
+    setSource(files("src/commonMain/kotlin"))
+}
+
+tasks.matching { it.name == "detektAndroidDebug" || it.name == "detektIosArm64Main" }.configureEach {
+    dependsOn("detektCommonMain")
 }
 
 // Ensure test tasks run sequentially to avoid port conflicts

@@ -5,8 +5,6 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import co.touchlab.kermit.Logger
-import co.touchlab.kermit.loggerConfigInit
-import co.touchlab.kermit.platformLogWriter
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
@@ -40,8 +38,9 @@ internal class WorkerCoordinatorImpl(
     private val workManager: WorkManager,
     private val mainRepository: MainRepository,
     private val appScope: CoroutineScope,
-    private val logger: Logger = Logger(loggerConfigInit(platformLogWriter()), TAG)
+    logger: Logger
 ) : WorkerCoordinator {
+    private val logger = logger.withTag(TAG)
 
     override fun start() {
         logger.d("Starting WorkerCoordinator")

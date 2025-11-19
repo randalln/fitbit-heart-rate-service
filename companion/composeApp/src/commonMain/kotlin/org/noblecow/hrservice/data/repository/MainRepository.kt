@@ -1,8 +1,6 @@
 package org.noblecow.hrservice.data.repository
 
 import co.touchlab.kermit.Logger
-import co.touchlab.kermit.loggerConfigInit
-import co.touchlab.kermit.platformLogWriter
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
@@ -65,8 +63,9 @@ internal class MainRepositoryImpl(
     private val webServerLocalDataSource: WebServerLocalDataSource,
     private val fakeBpmManager: FakeBpmManager,
     private val appScope: CoroutineScope,
-    private val logger: Logger = Logger(loggerConfigInit(platformLogWriter()), TAG)
+    defaultLogger: Logger
 ) : MainRepository {
+    private val logger = defaultLogger.withTag(TAG)
 
     private val stateMachine = ServicesStateMachine()
 

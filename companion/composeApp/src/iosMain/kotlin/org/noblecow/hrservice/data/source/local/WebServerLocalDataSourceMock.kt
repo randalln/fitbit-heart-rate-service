@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
  */
 @Inject
 @SingleIn(AppScope::class)
-@ContributesBinding(AppScope::class)
+// @ContributesBinding(AppScope::class)
 internal class WebServerLocalDataSourceMock(
     private val appScope: CoroutineScope,
     private val logger: Logger

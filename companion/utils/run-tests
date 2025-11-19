@@ -9,4 +9,4 @@ while getopts "r" opt; do
     esac
 done
 
-./gradlew ${RERUN_TASKS} detektAndroidDebug ktlintCheck testDebugUnitTest connectedAndroidTest
+./gradlew ${RERUN_TASKS} detektAndroidDebug detektIosArm64Main ktlintCheck testDebugUnitTest connectedAndroidTest

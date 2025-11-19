@@ -1,8 +1,6 @@
 package org.noblecow.hrservice.data.repository
 
 import co.touchlab.kermit.Logger
-import co.touchlab.kermit.loggerConfigInit
-import co.touchlab.kermit.platformLogWriter
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -21,8 +19,9 @@ private const val TAG = "FakeBpmManager"
 internal class FakeBpmManager(
     private val scope: CoroutineScope,
     private val fakeBpmLocalDataSource: FakeBpmLocalDataSource,
-    private val logger: Logger = Logger(loggerConfigInit(platformLogWriter()), TAG)
+    logger: Logger
 ) {
+    private val logger = logger.withTag(TAG)
     private var job: Job? = null
 
     /**

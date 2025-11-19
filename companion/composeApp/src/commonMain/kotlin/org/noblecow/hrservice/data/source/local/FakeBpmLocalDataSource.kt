@@ -1,5 +1,6 @@
 package org.noblecow.hrservice.data.source.local
 
+import co.touchlab.kermit.Logger
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -21,9 +22,15 @@ import org.noblecow.hrservice.data.util.FAKE_BPM_START
 import org.noblecow.hrservice.data.util.PORT_LISTEN
 import org.noblecow.hrservice.di.IoDispatcher
 
+private const val TAG = "FakeBpmLocalDataSource"
+
 @SingleIn(AppScope::class)
 @Inject
-internal class FakeBpmLocalDataSource(@IoDispatcher private val dispatcher: CoroutineDispatcher) {
+internal class FakeBpmLocalDataSource(
+    @IoDispatcher private val dispatcher: CoroutineDispatcher,
+    logger: Logger
+) {
+    private val logger = logger.withTag(TAG)
     private val httpClient: HttpClient by lazy {
         HttpClient {
             install(ClientContentNegotiation) {

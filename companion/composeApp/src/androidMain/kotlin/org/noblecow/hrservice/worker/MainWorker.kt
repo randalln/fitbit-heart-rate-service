@@ -15,8 +15,6 @@ import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import co.touchlab.kermit.Logger
-import co.touchlab.kermit.loggerConfigInit
-import co.touchlab.kermit.platformLogWriter
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
@@ -54,8 +52,9 @@ internal class MainWorker(
     @Assisted params: WorkerParameters,
     private val mainRepository: MainRepository,
     private val resourceHelper: ResourceHelper,
-    private val logger: Logger = Logger(loggerConfigInit(platformLogWriter()), TAG)
+    logger: Logger
 ) : CoroutineWorker(context, params) {
+    private val logger = logger.withTag(TAG)
 
     private val notificationManager = NotificationManagerCompat.from(applicationContext)
     private lateinit var notificationBuilder: NotificationCompat.Builder
