@@ -18,10 +18,10 @@ internal actual class AtomicRef<T> actual constructor(initial: T) {
         }
     }
 
-    actual fun set(newValue: T) {
+    actual fun set(value: T) {
         lock.lock()
         try {
-            value = newValue
+            this.value = value
         } finally {
             lock.unlock()
         }

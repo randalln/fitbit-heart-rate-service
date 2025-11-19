@@ -59,7 +59,7 @@ class WebServerLocalDataSourceTest {
                 // We need to wait for the full shutdown cycle plus OS cleanup
                 // Extended delay to ensure port is fully released between test variants
                 // Total: 2000ms (Netty) + 8000ms (OS + test variant cleanup) = 10000ms
-                delay(5000)
+                delay(15000)
             } catch (e: Exception) {
                 // Ignore cleanup errors but still delay to prevent port conflicts
                 println("Cleanup error: ${e.message}")
