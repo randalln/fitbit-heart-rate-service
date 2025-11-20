@@ -54,7 +54,7 @@ interface MainRepository {
 
 private const val TAG = "MainRepositoryImpl"
 
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "TooGenericExceptionCaught")
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 @Inject
@@ -127,7 +127,6 @@ internal class MainRepositoryImpl(
                 // Only notify when actively serving (prevents race during transitions)
                 if (servicesState.value == ServicesState.Started) {
                     if (bpmReading.sequenceNumber > 0) {
-                        @Suppress("TooGenericExceptionCaught")
                         try {
                             bluetoothLocalDataSource.notifyHeartRate(bpmReading.value)
                         } catch (e: Exception) {
@@ -176,7 +175,6 @@ internal class MainRepositoryImpl(
 
         var bluetoothStarted = false
 
-        @Suppress("TooGenericExceptionCaught")
         return try {
             // Start Bluetooth advertising
             logger.d("Starting Bluetooth advertising")
@@ -303,37 +301,46 @@ internal class MainRepositoryImpl(
             logger.i("All services stopped successfully")
             ServiceResult.Success(Unit)
         } else {
-            // Determine primary error type
-            val errorMessage = "Failed to stop ${errors.size} service(s): ${errors.joinToString { it.first }}"
-            val firstError = errors.first()
+            createStopServicesError(errors)
+        }
+    }
 
-            when {
-                firstError.first == "Bluetooth" -> {
-                    ServiceResult.Error(
-                        ServiceError.BluetoothError(
-                            reason = errorMessage,
-                            cause = firstError.second
-                        )
-                    )
-                }
+    /**
+     * Creates appropriate error result from service stop failures.
+     * Categorizes error based on the first failed service.
+     */
+    private fun createStopServicesError(
+        errors: List<Pair<String, Throwable>>
+    ): ServiceResult<Unit> {
+        val errorMessage = "Failed to stop ${errors.size} service(s): ${errors.joinToString { it.first }}"
+        val firstError = errors.first()
 
-                firstError.first == "WebServer" -> {
-                    ServiceResult.Error(
-                        ServiceError.WebServerError(
-                            reason = errorMessage,
-                            cause = firstError.second
-                        )
+        return when {
+            firstError.first == "Bluetooth" -> {
+                ServiceResult.Error(
+                    ServiceError.BluetoothError(
+                        reason = errorMessage,
+                        cause = firstError.second
                     )
-                }
+                )
+            }
 
-                else -> {
-                    ServiceResult.Error(
-                        ServiceError.UnknownError(
-                            message = errorMessage,
-                            cause = firstError.second
-                        )
+            firstError.first == "WebServer" -> {
+                ServiceResult.Error(
+                    ServiceError.WebServerError(
+                        reason = errorMessage,
+                        cause = firstError.second
                     )
-                }
+                )
+            }
+
+            else -> {
+                ServiceResult.Error(
+                    ServiceError.UnknownError(
+                        message = errorMessage,
+                        cause = firstError.second
+                    )
+                )
             }
         }
     }
@@ -346,7 +353,6 @@ internal class MainRepositoryImpl(
      * Note: Fake BPM is user-initiated (not started in startServices),
      * but defensively stopped here to ensure clean state on shutdown.
      */
-    @Suppress("TooGenericExceptionCaught")
     private suspend fun stopAllServices() {
         try {
             fakeBpmManager.stop()

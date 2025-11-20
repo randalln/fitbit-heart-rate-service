@@ -15,6 +15,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 
@@ -67,15 +68,20 @@ internal class KtorServerManager(
                         currentRequest.set(this)
                         logger?.d("Received POST request: $bpm")
 
+                        // Attempt to emit BPM with timeout
+                        // Swallowed exceptions are intentional - we respond to HTTP request even if emit fails
+                        @Suppress("SwallowedException", "TooGenericExceptionCaught")
                         try {
                             withTimeout(BPM_EMIT_TIMEOUT_MS) {
                                 onBpmReceived(this@run.bpm)
                             }
+                        } catch (e: CancellationException) {
+                            // Don't swallow cancellation - rethrow to preserve coroutine semantics
+                            throw e
                         } catch (e: Exception) {
-                            when (e) {
-                                is kotlinx.coroutines.CancellationException -> throw e
-                                else -> call.application.environment.log.error("Failed to emit BPM", e)
-                            }
+                            // Swallow and log non-cancellation exceptions for resilience
+                            // The HTTP request succeeds even if BPM notification fails
+                            call.application.environment.log.warn("BPM emit failed: ${e.message}")
                         }
                         call.respond(this)
                     }

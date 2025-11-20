@@ -246,6 +246,7 @@ detekt {
 }
 
 tasks.withType<Detekt>().configureEach {
+    buildUponDefaultConfig = true
     exclude("**/generated/**")
     config.setFrom("$rootDir/config/detekt/config.yml")
 }
