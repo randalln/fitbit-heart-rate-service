@@ -6,6 +6,8 @@ import android.bluetooth.BluetoothGattService.SERVICE_TYPE_PRIMARY
 import com.welie.blessed.BluetoothCentral
 import com.welie.blessed.BluetoothPeripheralManager
 import java.util.UUID
+import org.noblecow.hrservice.data.util.HRS_SERVICE_UUID_VAL
+import org.noblecow.hrservice.data.util.HR_MEASUREMENT_CHAR_UUID_VAL
 
 /**
  * Originally pulled from peripheral example in https://github.com/weliem/blessed-kotlin
@@ -62,10 +64,8 @@ internal class HeartRateService(peripheralManager: BluetoothPeripheralManager) :
         }
     }
 
-    companion object {
-        val HRS_SERVICE_UUID: UUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb")
-        private val HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID: UUID = UUID.fromString(
-            "00002A37-0000-1000-8000-00805f9b34fb"
-        )
+    internal companion object {
+        val HRS_SERVICE_UUID: UUID = UUID.fromString(HRS_SERVICE_UUID_VAL)
+        val HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID: UUID = UUID.fromString(HR_MEASUREMENT_CHAR_UUID_VAL)
     }
 }

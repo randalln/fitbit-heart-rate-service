@@ -110,7 +110,7 @@ internal class MainViewModel(
         viewModelScope.launch {
             when (val result = mainRepository.stopServices()) {
                 is ServiceResult.Success -> {
-                    logger.d("Services stopped successfully")
+                    logger.d("Initiated stop services")
                 }
 
                 is ServiceResult.Error -> {
