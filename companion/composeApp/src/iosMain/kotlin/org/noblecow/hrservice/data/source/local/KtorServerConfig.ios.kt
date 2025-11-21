@@ -8,7 +8,7 @@ import io.ktor.server.application.Application
  *
  * Uses Kermit logger for request logging to ensure visibility in Xcode console.
  */
-actual class KtorServerConfig {
+actual class KtorServerConfig actual constructor() {
     actual fun configureApplication(
         application: Application,
         logger: Logger?,

@@ -8,7 +8,7 @@ import io.ktor.server.application.Application
  *
  * Provides server engine type, logging configuration, and platform-specific plugins.
  */
-expect class KtorServerConfig {
+expect class KtorServerConfig() {
     /**
      * Configure the Ktor application with platform-specific plugins.
      *

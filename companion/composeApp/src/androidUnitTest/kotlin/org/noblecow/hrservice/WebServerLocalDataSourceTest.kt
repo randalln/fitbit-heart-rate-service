@@ -1,6 +1,9 @@
 package org.noblecow.hrservice
 
 import app.cash.turbine.test
+import co.touchlab.kermit.CommonWriter
+import co.touchlab.kermit.Logger
+import co.touchlab.kermit.loggerConfigInit
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -39,11 +42,12 @@ class WebServerLocalDataSourceTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var webServerLocalDataSource: WebServerLocalDataSource
+    val logger = Logger(loggerConfigInit(CommonWriter()), "WebServerLocalDataSourceTest")
 
     @Before
     fun before() {
         val testScope = CoroutineScope(SupervisorJob() + mainDispatcherRule.testDispatcher)
-        webServerLocalDataSource = WebServerLocalDataSourceImpl(testScope)
+        webServerLocalDataSource = WebServerLocalDataSourceImpl(testScope, logger)
     }
 
     @After

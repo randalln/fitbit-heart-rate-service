@@ -11,7 +11,7 @@ import org.noblecow.hrservice.BuildConfig
  *
  * Includes CallLogging plugin in debug builds for structured request/response logging.
  */
-actual class KtorServerConfig {
+actual class KtorServerConfig actual constructor() {
     actual fun configureApplication(
         application: Application,
         logger: Logger?,

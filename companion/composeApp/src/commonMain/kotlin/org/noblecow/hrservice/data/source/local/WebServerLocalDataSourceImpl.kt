@@ -1,5 +1,6 @@
 package org.noblecow.hrservice.data.source.local
 
+import co.touchlab.kermit.Logger
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
@@ -7,6 +8,7 @@ import dev.zacsweers.metro.SingleIn
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.ApplicationStopping
+import io.ktor.server.engine.EmbeddedServer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,21 +23,25 @@ import org.noblecow.hrservice.data.util.PORT_LISTEN
 
 private const val STOP_GRACE_PERIOD_MS = 1000L
 private const val STOP_TIMEOUT_MS = 2000L
+private const val TAG = "WebServerLocalDataSourceImpl"
 
 /**
- * Android implementation of WebServerLocalDataSource using Netty engine.
+ * Common implementation of WebServerLocalDataSource
  *
- * Delegates common server logic to [KtorServerManager] while handling
- * Android-specific lifecycle and state management.
+ * Delegates common server logic to [KtorServerManager]
  */
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 @Inject
-internal class WebServerLocalDataSourceImpl(appScope: CoroutineScope) : WebServerLocalDataSource {
+internal class WebServerLocalDataSourceImpl(
+    appScope: CoroutineScope,
+    defaultLogger: Logger
+) : WebServerLocalDataSource {
+    val logger = defaultLogger.withTag(TAG)
 
     private val serverManager = KtorServerManager(
         config = KtorServerConfig(),
-        logger = null // Android uses Ktor's CallLogging plugin instead
+        logger = logger
     )
 
     // BpmReading with sequence number ensures each emission is unique even if BPM value repeats
@@ -83,7 +89,7 @@ internal class WebServerLocalDataSourceImpl(appScope: CoroutineScope) : WebServe
                             }
                         }
                     }
-                    (ktorServer as? io.ktor.server.engine.EmbeddedServer<*, *>)?.start(wait = false)
+                    (ktorServer as? EmbeddedServer<*, *>)?.start(wait = false)
                         ?: error("Failed to start server: invalid server instance")
 
                     // Clear any previous errors on successful start
@@ -101,7 +107,7 @@ internal class WebServerLocalDataSourceImpl(appScope: CoroutineScope) : WebServe
 
     override suspend fun stop() {
         serverMutex.withLock {
-            (ktorServer as? io.ktor.server.engine.EmbeddedServer<*, *>)?.let { server ->
+            (ktorServer as? EmbeddedServer<*, *>)?.let { server ->
                 if (internalKtorState != ApplicationStopped) {
                     server.stop(STOP_GRACE_PERIOD_MS, STOP_TIMEOUT_MS)
                 }

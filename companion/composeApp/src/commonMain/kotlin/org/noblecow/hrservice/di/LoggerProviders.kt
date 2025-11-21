@@ -1,6 +1,7 @@
 package org.noblecow.hrservice.di
 
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.Severity
 import co.touchlab.kermit.loggerConfigInit
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
@@ -23,5 +24,5 @@ object LoggerProviders {
      */
     @Provides
     @SingleIn(AppScope::class)
-    fun provideLogger(): Logger = Logger(loggerConfigInit(getAppLogWriter()), "App")
+    fun provideLogger(): Logger = Logger(loggerConfigInit(getAppLogWriter(), minSeverity = Severity.Debug), "App")
 }

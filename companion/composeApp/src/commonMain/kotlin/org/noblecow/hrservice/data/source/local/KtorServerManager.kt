@@ -9,13 +9,13 @@ import io.ktor.server.application.ApplicationStarting
 import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.application.install
+import io.ktor.server.application.log
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 
@@ -33,7 +33,7 @@ private const val BPM_EMIT_TIMEOUT_MS = 5000L
  */
 internal class KtorServerManager(
     private val config: KtorServerConfig,
-    private val logger: Logger?
+    private val logger: Logger
 ) {
     private val currentRequest = AtomicRef<Request?>(null)
 
@@ -59,14 +59,14 @@ internal class KtorServerManager(
             // Configure routes
             routing {
                 get("/") {
-                    call.application.environment.log.info("GET /")
+                    logger.d("GET /")
                     call.respond(Response(status = "OK"))
                 }
 
                 post("/") {
                     call.receive<Request>().run {
                         currentRequest.set(this)
-                        logger?.d("Received POST request: $bpm")
+                        logger.d("Received POST request: $bpm")
 
                         // Attempt to emit BPM with timeout
                         // Swallowed exceptions are intentional - we respond to HTTP request even if emit fails
@@ -75,13 +75,13 @@ internal class KtorServerManager(
                             withTimeout(BPM_EMIT_TIMEOUT_MS) {
                                 onBpmReceived(this@run.bpm)
                             }
-                        } catch (e: CancellationException) {
-                            // Don't swallow cancellation - rethrow to preserve coroutine semantics
-                            throw e
                         } catch (e: Exception) {
                             // Swallow and log non-cancellation exceptions for resilience
                             // The HTTP request succeeds even if BPM notification fails
-                            call.application.environment.log.warn("BPM emit failed: ${e.message}")
+                            when (e) {
+                                is kotlinx.coroutines.CancellationException -> throw e
+                                else -> logger.e("Failed to emit BPM", e)
+                            }
                         }
                         call.respond(this)
                     }
@@ -100,31 +100,21 @@ internal class KtorServerManager(
         monitor: Events,
         onStateChange: (Any) -> Unit
     ) {
-        val loggingEnabled = config.isLifecycleLoggingEnabled()
-
         monitor.apply {
             subscribe(ApplicationStarting) { application ->
-                if (loggingEnabled) {
-                    application.environment.log.debug("Server is starting")
-                }
+                logger.d("Server is starting")
                 onStateChange(ApplicationStarting)
             }
             subscribe(ApplicationStarted) { application ->
-                if (loggingEnabled) {
-                    application.environment.log.debug("Server is started")
-                }
+                logger.d("Server is started")
                 onStateChange(ApplicationStarted)
             }
             subscribe(ApplicationStopping) { application ->
-                if (loggingEnabled) {
-                    application.environment.log.debug("Server is stopping")
-                }
+                logger.d("Server is stopping")
                 onStateChange(ApplicationStopping)
             }
             subscribe(ApplicationStopped) { application ->
-                if (loggingEnabled) {
-                    application.environment.log.debug("Server is stopped")
-                }
+                logger.d("Server is stopped")
                 onStateChange(ApplicationStopped)
             }
         }

@@ -4,6 +4,7 @@ import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Message
 import co.touchlab.kermit.Severity
 import co.touchlab.kermit.Tag
+import platform.CoreFoundation.SEVERITY_ERROR
 
 /**
  * iOS implementation uses print() for Xcode console visibility.
@@ -23,3 +24,5 @@ actual fun getAppLogWriter(): LogWriter = object : LogWriter() {
         println(logMessage)
     }
 }
+
+actual fun minLogSeverity(): Severity = Severity.Verbose
