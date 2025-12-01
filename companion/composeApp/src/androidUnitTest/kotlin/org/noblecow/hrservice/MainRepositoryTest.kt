@@ -13,6 +13,7 @@ import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -30,6 +31,7 @@ import org.noblecow.hrservice.data.repository.ServiceError
 import org.noblecow.hrservice.data.repository.ServiceResult
 import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.data.source.local.AdvertisingState
+import org.noblecow.hrservice.data.source.local.BluetoothError
 import org.noblecow.hrservice.data.source.local.BluetoothLocalDataSource
 import org.noblecow.hrservice.data.source.local.BpmReading
 import org.noblecow.hrservice.data.source.local.WebServerLocalDataSource
@@ -65,6 +67,14 @@ class MainRepositoryTest {
         val testScope = CoroutineScope(SupervisorJob() + mainDispatcherRule.testDispatcher)
         val logger = Logger(loggerConfigInit(CommonWriter()), "MainRepositoryTest")
 
+        // Configure default delays for stop operations
+        every { bluetoothLocalDataSource.stopAdvertising() } answers {
+            Thread.sleep(1000)
+        }
+        coEvery { webServerLocalDataSource.stop() } coAnswers {
+            delay(1000)
+        }
+
         mainRepository = MainRepositoryImpl(
             bluetoothLocalDataSource,
             webServerLocalDataSource,
@@ -76,6 +86,15 @@ class MainRepositoryTest {
 
     @Test
     fun `All four ServicesStates are emitted`() = runTest {
+        every { bluetoothLocalDataSource.stopAdvertising() } answers {
+            Thread.sleep(1000)
+            mockAdvertisingFlow.value = AdvertisingState.Stopped
+        }
+        coEvery { webServerLocalDataSource.stop() } coAnswers {
+            delay(1000)
+            mockWebServerState.value = WebServerState(isReady = false)
+        }
+
         mainRepository.appStateFlow.test {
             // SharedFlow with replay=1 emits the replayed value immediately
             assertEquals(AppState(servicesState = ServicesState.Stopped), awaitItem())
@@ -88,9 +107,7 @@ class MainRepositoryTest {
             mainRepository.stopServices()
             verify { bluetoothLocalDataSource.stopAdvertising() }
             coVerify { webServerLocalDataSource.stop() }
-            mockAdvertisingFlow.value = AdvertisingState.Stopped
             assertEquals(AppState(servicesState = ServicesState.Stopping), awaitItem())
-            mockWebServerState.value = WebServerState(isReady = false)
             assertEquals(AppState(servicesState = ServicesState.Stopped), awaitItem())
         }
     }
@@ -168,8 +185,8 @@ class MainRepositoryTest {
     // ============================================================================
 
     @Test
-    fun `startServices returns PermissionError when Bluetooth throws SecurityException`() = runTest {
-        every { bluetoothLocalDataSource.startAdvertising() } throws SecurityException("Permission denied")
+    fun `startServices returns PermissionError when Bluetooth throws PermissionDenied`() = runTest {
+        coEvery { bluetoothLocalDataSource.startAdvertising() } throws BluetoothError.PermissionDenied()
 
         val result = mainRepository.startServices()
 
@@ -180,8 +197,9 @@ class MainRepositoryTest {
     }
 
     @Test
-    fun `startServices returns BluetoothError when Bluetooth throws IllegalStateException`() = runTest {
-        every { bluetoothLocalDataSource.startAdvertising() } throws IllegalStateException("Bluetooth unavailable")
+    fun `startServices returns BluetoothError when Bluetooth throws InvalidState`() = runTest {
+        coEvery { bluetoothLocalDataSource.startAdvertising() } throws
+            BluetoothError.InvalidState("Bluetooth unavailable")
 
         val result = mainRepository.startServices()
 
@@ -223,7 +241,7 @@ class MainRepositoryTest {
         mainRepository.startServices()
 
         // Assert - Bluetooth should be stopped (rollback)
-        verify { bluetoothLocalDataSource.startAdvertising() }
+        coVerify { bluetoothLocalDataSource.startAdvertising() }
         verify { bluetoothLocalDataSource.stopAdvertising() }
     }
 

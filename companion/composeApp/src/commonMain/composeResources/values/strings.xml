@@ -18,6 +18,8 @@
     <string name="open_source">Open Source</string>
     <string name="permissions_denied">Required permissions denied</string>
     <string name="start">Start</string>
+    <string name="starting">Starting...</string>
     <string name="stop">Stop</string>
+    <string name="stopping">Stopping...</string>
     <string name="toggle_fake_bpm">Fake BPM</string>
 </resources>

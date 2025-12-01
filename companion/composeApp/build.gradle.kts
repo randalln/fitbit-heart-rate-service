@@ -128,8 +128,10 @@ kotlin {
             implementation(libs.mockk.android)
             implementation(libs.mockk.agent)
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.ktor.server.test.host)
             implementation(libs.logback.classic)
             implementation(libs.turbine)
+            implementation(libs.work.runtime.ktx)
         }
         androidInstrumentedTest.dependencies {
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
@@ -142,6 +144,12 @@ kotlin {
             implementation(libs.ktor.client.darwin)
             implementation(libs.ktor.server.cio)
             implementation(libs.ktor.server.core)
+        }
+        iosTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.kermit.test)
+            implementation(libs.turbine)
         }
     }
 }
@@ -263,14 +271,4 @@ tasks.register<Detekt>("detektCommonMain") {
 
 tasks.matching { it.name == "detektAndroidDebug" || it.name == "detektIosArm64Main" }.configureEach {
     dependsOn("detektCommonMain")
-}
-
-// Ensure test tasks run sequentially to avoid port conflicts
-// WebServerLocalDataSourceTest uses a fixed port (12345) across all test variants
-tasks.withType<Test>().configureEach {
-    maxParallelForks = 1
-    // Add delay between test classes to allow port cleanup
-    testLogging {
-        events("passed", "skipped", "failed")
-    }
 }

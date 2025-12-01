@@ -17,7 +17,7 @@ import dev.zacsweers.metro.SingleIn
 @Inject
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-internal class PermissionsHelperMock : PermissionsHelper {
+internal class PermissionsHelperImpl : PermissionsHelper {
     /**
      * Returns an empty array, indicating no missing permissions.
      * For iOS mock, we assume notifications are always enabled.

@@ -5,6 +5,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import kotlin.concurrent.Volatile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharedFlow
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.noblecow.hrservice.data.source.local.BluetoothError
 import org.noblecow.hrservice.data.source.local.BluetoothLocalDataSource
 import org.noblecow.hrservice.data.source.local.BpmReading
 import org.noblecow.hrservice.data.source.local.HardwareState
@@ -67,7 +69,11 @@ internal class MainRepositoryImpl(
 ) : MainRepository {
     private val logger = defaultLogger.withTag(TAG)
 
-    private val stateMachine = ServicesStateMachine()
+    private val stateMachine = ServicesStateMachine(logger)
+
+    // Track user-initiated operations to prevent auto-stop interference
+    @Volatile
+    private var isUserOperationInProgress = false
 
     private val servicesState: StateFlow<ServicesState> = combine(
         bluetoothLocalDataSource.advertisingState,
@@ -104,9 +110,10 @@ internal class MainRepositoryImpl(
 
     init {
         // React to state transitions - stop all services when entering Stopping state
+        // Only auto-stop if NOT during a user-initiated operation (to avoid interference with retries)
         appScope.launch {
             servicesState.collect { state ->
-                if (state == ServicesState.Stopping) {
+                if (state == ServicesState.Stopping && !isUserOperationInProgress) {
                     logger.d("Auto-stopping all services due to state transition")
                     @Suppress("TooGenericExceptionCaught")
                     try {
@@ -116,6 +123,8 @@ internal class MainRepositoryImpl(
                         // Don't rethrow - we're in a background coroutine
                         // The state machine will handle the error state
                     }
+                } else if (state == ServicesState.Stopping && isUserOperationInProgress) {
+                    logger.d("Skipping auto-stop: user operation in progress")
                 }
             }
         }
@@ -165,6 +174,7 @@ internal class MainRepositoryImpl(
 
     override fun permissionsGranted() = bluetoothLocalDataSource.permissionsGranted()
 
+    @Suppress("LongMethod")
     override suspend fun startServices(): ServiceResult<Unit> {
         // Check if already running
         if (servicesState.value != ServicesState.Stopped) {
@@ -173,10 +183,12 @@ internal class MainRepositoryImpl(
             return ServiceResult.Error(ServiceError.AlreadyInState(state))
         }
 
+        // Mark as user operation to prevent auto-stop interference during retries
+        isUserOperationInProgress = true
         var bluetoothStarted = false
 
         return try {
-            // Start Bluetooth advertising
+            // Start Bluetooth advertising (waits for advertising to actually start)
             logger.d("Starting Bluetooth advertising")
             bluetoothLocalDataSource.startAdvertising()
             bluetoothStarted = true
@@ -188,6 +200,33 @@ internal class MainRepositoryImpl(
             logger.i("No errors starting web server")
 
             ServiceResult.Success(Unit)
+        } catch (e: BluetoothError.PermissionDenied) {
+            logger.e("Bluetooth permission denied", e)
+            rollbackStartup(bluetoothStarted)
+            ServiceResult.Error(
+                ServiceError.PermissionError(
+                    permission = "Bluetooth permissions required",
+                    cause = e
+                )
+            )
+        } catch (e: BluetoothError.InvalidState) {
+            logger.e("Bluetooth in invalid state", e)
+            rollbackStartup(bluetoothStarted)
+            ServiceResult.Error(
+                ServiceError.BluetoothError(
+                    reason = e.message ?: "Bluetooth unavailable or in invalid state",
+                    cause = e
+                )
+            )
+        } catch (e: BluetoothError.AdvertisingFailed) {
+            logger.e("Bluetooth advertising failed", e)
+            rollbackStartup(bluetoothStarted)
+            ServiceResult.Error(
+                ServiceError.BluetoothError(
+                    reason = e.message ?: "Failed to start Bluetooth advertising",
+                    cause = e
+                )
+            )
         } catch (e: IllegalStateException) {
             logger.e("Bluetooth in invalid state", e)
             rollbackStartup(bluetoothStarted)
@@ -201,20 +240,7 @@ internal class MainRepositoryImpl(
             logger.e("Error starting services", e)
             rollbackStartup(bluetoothStarted)
 
-            // Check if this is a permission error (SecurityException from Android platform)
-            // We can't catch SecurityException directly in commonMain, so check by class name
-            val isPermissionError = e::class.simpleName == "SecurityException"
-
             when {
-                isPermissionError -> {
-                    ServiceResult.Error(
-                        ServiceError.PermissionError(
-                            permission = "Bluetooth permissions required",
-                            cause = e
-                        )
-                    )
-                }
-
                 bluetoothStarted -> {
                     // BT started, so error is from web server
                     ServiceResult.Error(
@@ -226,7 +252,7 @@ internal class MainRepositoryImpl(
                 }
 
                 else -> {
-                    // BT didn't start
+                    // BT didn't start - unexpected error
                     ServiceResult.Error(
                         ServiceError.BluetoothError(
                             reason = e.message ?: "Failed to start Bluetooth",
@@ -235,13 +261,16 @@ internal class MainRepositoryImpl(
                     )
                 }
             }
+        } finally {
+            // Always clear the flag when operation completes
+            isUserOperationInProgress = false
         }
     }
 
     /**
      * Rolls back any successfully started services if startup fails partway through.
      */
-    private suspend fun rollbackStartup(bluetoothStarted: Boolean) {
+    private fun rollbackStartup(bluetoothStarted: Boolean) {
         if (!bluetoothStarted) {
             logger.d("No services to rollback")
             return
@@ -264,44 +293,51 @@ internal class MainRepositoryImpl(
             return ServiceResult.Error(ServiceError.AlreadyInState("stopped"))
         }
 
+        // Mark as user operation
+        isUserOperationInProgress = true
         logger.d("Stopping all services")
         val errors = mutableListOf<Pair<String, Throwable>>()
 
-        // Try to stop all services, even if some fail
-        // Stop fake BPM first (least critical)
-        // Note: Fake BPM is user-initiated via toggleFakeBpm(), not started in startServices()
-        // We defensively stop it here to ensure clean state when services shut down
-        try {
-            fakeBpmManager.stop()
-            logger.d("Fake BPM manager stopped")
-        } catch (e: Exception) {
-            logger.e("Failed to stop fake BPM manager", e)
-            errors.add("Fake BPM" to e)
-        }
+        return try {
+            // Try to stop all services, even if some fail
+            // Stop fake BPM first (least critical)
+            // Note: Fake BPM is user-initiated via toggleFakeBpm(), not started in startServices()
+            // We defensively stop it here to ensure clean state when services shut down
+            try {
+                fakeBpmManager.stop()
+                logger.d("Fake BPM manager stopped")
+            } catch (e: Exception) {
+                logger.e("Failed to stop fake BPM manager", e)
+                errors.add("Fake BPM" to e)
+            }
 
-        // Stop Bluetooth
-        try {
-            bluetoothLocalDataSource.stopAdvertising()
-            logger.d("Bluetooth advertising stopped")
-        } catch (e: Exception) {
-            logger.e("Failed to stop Bluetooth advertising", e)
-            errors.add("Bluetooth" to e)
-        }
+            // Stop Bluetooth
+            try {
+                bluetoothLocalDataSource.stopAdvertising()
+                logger.d("Bluetooth advertising stop initiated")
+            } catch (e: Exception) {
+                logger.e("Failed to stop Bluetooth advertising", e)
+                errors.add("Bluetooth" to e)
+            }
 
-        // Stop web server
-        try {
-            webServerLocalDataSource.stop()
-            logger.d("Web server stopped")
-        } catch (e: Exception) {
-            logger.e("Failed to stop web server", e)
-            errors.add("WebServer" to e)
-        }
+            // Stop web server
+            try {
+                webServerLocalDataSource.stop()
+                logger.d("Web server stop initiated")
+            } catch (e: Exception) {
+                logger.e("Failed to stop web server", e)
+                errors.add("WebServer" to e)
+            }
 
-        return if (errors.isEmpty()) {
-            logger.i("All services stopped successfully")
-            ServiceResult.Success(Unit)
-        } else {
-            createStopServicesError(errors)
+            if (errors.isEmpty()) {
+                logger.i("Initiated stopping of all services successfully")
+                ServiceResult.Success(Unit)
+            } else {
+                createStopServicesError(errors)
+            }
+        } finally {
+            // Always clear the flag
+            isUserOperationInProgress = false
         }
     }
 
@@ -315,8 +351,8 @@ internal class MainRepositoryImpl(
         val errorMessage = "Failed to stop ${errors.size} service(s): ${errors.joinToString { it.first }}"
         val firstError = errors.first()
 
-        return when {
-            firstError.first == "Bluetooth" -> {
+        return when (firstError.first) {
+            "Bluetooth" -> {
                 ServiceResult.Error(
                     ServiceError.BluetoothError(
                         reason = errorMessage,
@@ -325,7 +361,7 @@ internal class MainRepositoryImpl(
                 )
             }
 
-            firstError.first == "WebServer" -> {
+            "WebServer" -> {
                 ServiceResult.Error(
                     ServiceError.WebServerError(
                         reason = errorMessage,

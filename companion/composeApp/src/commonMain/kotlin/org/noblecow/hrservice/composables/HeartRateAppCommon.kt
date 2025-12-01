@@ -171,7 +171,7 @@ internal fun HeartRateNavigation(
                     !isClientConnected,
                 bpm = bpm,
                 isHeartBeatPulse = isPulseAnimationComplete,
-                showStart = servicesState == ServicesState.Stopped
+                servicesState = servicesState
             )
         }
         composable(route = HeartRateScreen.OpenSource.name) {

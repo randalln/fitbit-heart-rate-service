@@ -1,16 +1,25 @@
 package org.noblecow.hrservice.composables
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import heartratemonitor.composeapp.generated.resources.Res
 import heartratemonitor.composeapp.generated.resources.start
+import heartratemonitor.composeapp.generated.resources.starting
 import heartratemonitor.composeapp.generated.resources.stop
+import heartratemonitor.composeapp.generated.resources.stopping
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.ui.theme.HeartRateTheme
 
 /**
@@ -21,13 +30,14 @@ import org.noblecow.hrservice.ui.theme.HeartRateTheme
  * - 44pt minimum touch targets
  * - iOS-appropriate corner radius and padding
  * - iOS-style button appearance
+ * Shows a circular progress indicator during Starting and Stopping transition states.
  *
  * @param onStartClick Callback when the start button is clicked.
  * @param onStopClick Callback when the stop button is clicked.
  * @param showAwaitingClient Whether to show the "Awaiting Client" message.
  * @param bpm Current heart rate in beats per minute.
  * @param isHeartBeatPulse Whether the heart animation should pulse.
- * @param showStart Whether to show the start button (true) or stop button (false).
+ * @param servicesState Current state of the services (Starting, Started, Stopping, Stopped, Error).
  * @param modifier Optional modifier for this composable.
  */
 @Composable
@@ -37,7 +47,7 @@ actual fun HomeScreen(
     showAwaitingClient: Boolean,
     bpm: Int,
     isHeartBeatPulse: Boolean,
-    showStart: Boolean,
+    servicesState: ServicesState,
     modifier: Modifier
 ) {
     HomeScreenContent(
@@ -46,19 +56,57 @@ actual fun HomeScreen(
         isHeartBeatPulse = isHeartBeatPulse,
         modifier = modifier
     ) {
-        if (showStart) {
-            IosButton(
-                onClick = onStartClick,
-                modifier = Modifier.wrapContentSize()
-            ) {
-                Text(text = stringResource(Res.string.start))
+        when (servicesState) {
+            ServicesState.Stopped, is ServicesState.Error -> {
+                IosButton(
+                    onClick = onStartClick,
+                    modifier = Modifier.wrapContentSize()
+                ) {
+                    Text(text = stringResource(Res.string.start))
+                }
             }
-        } else {
-            IosButton(
-                onClick = onStopClick,
-                modifier = Modifier.wrapContentSize()
-            ) {
-                Text(text = stringResource(Res.string.stop))
+
+            ServicesState.Started -> {
+                IosButton(
+                    onClick = onStopClick,
+                    modifier = Modifier.wrapContentSize()
+                ) {
+                    Text(text = stringResource(Res.string.stop))
+                }
+            }
+
+            ServicesState.Starting -> {
+                IosButton(
+                    onClick = { },
+                    enabled = false,
+                    modifier = Modifier.wrapContentSize()
+                ) {
+                    Row {
+                        Text(text = stringResource(Res.string.starting))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
+            }
+
+            ServicesState.Stopping -> {
+                IosButton(
+                    onClick = { },
+                    enabled = false,
+                    modifier = Modifier.wrapContentSize()
+                ) {
+                    Row {
+                        Text(text = stringResource(Res.string.stopping))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
             }
         }
     }
@@ -74,7 +122,7 @@ private fun HomeScreenLightPreview() {
             HomeScreen(
                 onStartClick = { },
                 onStopClick = { },
-                showStart = true,
+                servicesState = ServicesState.Stopped,
                 showAwaitingClient = true,
                 bpm = 128,
                 isHeartBeatPulse = true
@@ -93,7 +141,7 @@ private fun HomeScreenDarkPreview() {
             HomeScreen(
                 onStartClick = { },
                 onStopClick = { },
-                showStart = true,
+                servicesState = ServicesState.Starting,
                 showAwaitingClient = true,
                 bpm = 128,
                 isHeartBeatPulse = true

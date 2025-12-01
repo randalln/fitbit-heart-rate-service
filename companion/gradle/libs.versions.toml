@@ -1,13 +1,13 @@
 [versions]
 aboutLibs = "13.1.0"
-activity = "1.11.0"
-activity-compose = "1.11.0"
+activity = "1.12.0"
+activity-compose = "1.12.0"
 agp = "8.13.1"
 blessedKotlin = "3.0.11"
-compose-bom = "2025.11.00"
-composeHotReload = "1.0.0-rc02"
+compose-bom = "2025.11.01"
+composeHotReload = "1.0.0"
 compose-multiplatform = "1.9.3"
-compose-rules = "0.4.27"
+compose-rules = "0.4.28"
 detekt = "1.23.8"
 junit = "4.13.2"
 jvm = "21"
@@ -16,14 +16,14 @@ kotlin = "2.2.21"
 kotlinxCoroutines = "1.10.2"
 kover = "0.9.3"
 ksp = "2.2.20-2.0.4"
-ktlint-gradle = "13.1.0"
-ktor = "3.3.2"
+ktlint-gradle = "14.0.1"
+ktor = "3.3.3"
 lifecycleViewmodelCompose = "2.9.6"
 logbackAndroid = "3.0.0"
-logbackClassic = "1.5.20"
+logbackClassic = "1.5.21"
 material = "1.13.0"
 materialIconsCore = "1.7.3"
-metro = "0.7.5"
+metro = "0.7.7"
 mockk = "1.14.6"
 navigationCompose = "2.9.1"
 testRules = "1.7.0"
@@ -66,6 +66,7 @@ ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negoti
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
 lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
 logback-android = { module = "com.github.tony19:logback-android", version.ref = "logbackAndroid" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logbackClassic" }

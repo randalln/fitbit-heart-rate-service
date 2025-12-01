@@ -31,24 +31,34 @@ internal class FakeBpmLocalDataSource(
     logger: Logger
 ) {
     private val logger = logger.withTag(TAG)
-    private val httpClient: HttpClient by lazy {
-        HttpClient {
-            install(ClientContentNegotiation) {
-                json()
-            }
+    private var httpClient: HttpClient? = null
+
+    private fun getOrCreateHttpClient(): HttpClient = httpClient ?: HttpClient {
+        install(ClientContentNegotiation) {
+            json()
         }
-    }
+    }.also { httpClient = it }
 
     suspend fun run() {
         withContext(dispatcher) {
             getFakeBPMFlow()
                 .collect {
-                    httpClient.post("http://localhost:$PORT_LISTEN") {
+                    getOrCreateHttpClient().post("http://localhost:$PORT_LISTEN") {
                         contentType(ContentType.Application.Json)
                         setBody(Request(it))
                     }
                 }
         }
+    }
+
+    /**
+     * Closes the HTTP client to release any open connections.
+     * This is critical when stopping FakeBPM to ensure the server port is released quickly.
+     */
+    fun cleanup() {
+        httpClient?.close()
+        httpClient = null
+        logger.d { "HttpClient closed and cleaned up" }
     }
 
     private fun getFakeBPMFlow(): Flow<Int> = flow {

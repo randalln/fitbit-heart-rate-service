@@ -7,11 +7,19 @@ import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import heartratemonitor.composeapp.generated.resources.Res
 import heartratemonitor.composeapp.generated.resources.permissions_denied
+import kotlin.time.TimeSource
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -26,6 +34,7 @@ import org.noblecow.hrservice.domain.usecase.StartServiceResult
 import org.noblecow.hrservice.domain.usecase.StartServicesUseCase
 
 private const val STOP_TIMEOUT_MILLIS = 5000L
+private const val MIN_TRANSITION_STATE_DURATION_MS = 1000L
 private const val TAG = "MainViewModel"
 
 internal data class MainUiState(
@@ -38,6 +47,7 @@ internal data class MainUiState(
     val userMessage: String? = null
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("TooManyFunctions")
 @ContributesIntoMap(ViewModelScope::class)
 @ViewModelKey(MainViewModel::class)
@@ -64,6 +74,55 @@ internal class MainViewModel(
             userMessage = MutableStateFlow(it.userMessage)
         }
 
+        // Transform appStateFlow to ensure transition states (Starting/Stopping) are displayed
+        // for at least MIN_TRANSITION_STATE_DURATION_MS
+        data class StateWithTimestamp(
+            val state: org.noblecow.hrservice.data.repository.AppState,
+            val entryMark: kotlin.time.TimeMark
+        )
+
+        data class StateTransition(
+            val current: StateWithTimestamp,
+            val previous: StateWithTimestamp?
+        )
+
+        val delayedAppStateFlow = mainRepository.appStateFlow
+            .runningFold<org.noblecow.hrservice.data.repository.AppState, StateTransition?>(
+                null
+            ) { transition, newState ->
+                StateTransition(
+                    current = StateWithTimestamp(newState, TimeSource.Monotonic.markNow()),
+                    previous = transition?.current
+                )
+            }
+            .filterNotNull()
+            .onEach { transition ->
+                // If previous was a transition state, ensure it was displayed for minimum duration
+                val previous = transition.previous
+                if (previous != null) {
+                    val wasTransitionState = previous.state.servicesState is ServicesState.Starting ||
+                        previous.state.servicesState is ServicesState.Stopping
+
+                    if (wasTransitionState) {
+                        val elapsed = previous.entryMark.elapsedNow().inWholeMilliseconds
+                        val remaining = MIN_TRANSITION_STATE_DURATION_MS - elapsed
+                        if (remaining > 0) {
+                            logger.d("Delaying transition from ${previous.state.servicesState} by ${remaining}ms")
+                            delay(remaining)
+                        }
+                    }
+                }
+            }
+            .also { stateTransitionFlow ->
+                // Separate logging flow that only logs when services state changes
+                stateTransitionFlow
+                    .map { it.current.state.servicesState }
+                    .distinctUntilChanged()
+                    .onEach { logger.d("Services state changed: $it") }
+                    .launchIn(viewModelScope)
+            }
+            .map { it.current.state }
+
         mainUiState = combine(
             permissionsRequested.onEach {
                 logger.d("permissionsRequested: $it")
@@ -74,7 +133,7 @@ internal class MainViewModel(
             userMessage.onEach {
                 logger.d("userMessage: $it")
             },
-            mainRepository.appStateFlow
+            delayedAppStateFlow
         ) {
                 permissionsRequestedValue,
                 bluetoothEnabled,

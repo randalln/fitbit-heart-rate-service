@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -35,7 +36,11 @@ internal class FakeBpmManager(
         job = scope.launch {
             try {
                 fakeBpmLocalDataSource.run()
-            } catch (e: Throwable) {
+            } catch (e: CancellationException) {
+                // Rethrow CancellationException to properly signal coroutine cancellation
+                throw e
+            } catch (e: Exception) {
+                // Log other exceptions
                 logger.e(e.message ?: "Fake BPM generation failed", e)
             }
         }
@@ -49,6 +54,8 @@ internal class FakeBpmManager(
     fun stop(): Boolean = job?.let {
         it.cancel()
         job = null
+        // Clean up HTTP client connections to release the server port quickly
+        fakeBpmLocalDataSource.cleanup()
         true
     } ?: false
 

@@ -1,5 +1,6 @@
 package org.noblecow.hrservice.data.repository
 
+import co.touchlab.kermit.Logger
 import heartratemonitor.composeapp.generated.resources.Res
 import heartratemonitor.composeapp.generated.resources.error_advertise
 import heartratemonitor.composeapp.generated.resources.error_web_server
@@ -17,7 +18,7 @@ sealed class ServicesState {
 
 internal interface ServicesTransitionState
 
-internal class ServicesStateMachine {
+internal class ServicesStateMachine(private val logger: Logger) {
     fun nextState(
         previousState: ServicesState,
         advertisingState: AdvertisingState,
@@ -49,6 +50,7 @@ internal class ServicesStateMachine {
      * The [previousState] determines the direction of transition when services are in mixed states:
      * - If transitioning from [ServicesState.Started], we're shutting down → [ServicesState.Stopping]
      * - If transitioning from [ServicesState.Stopped], we're starting up → [ServicesState.Starting]
+     * - If already in a transition state, preserve the direction (Starting stays Starting, Stopping stays Stopping)
      *
      * @param previousState The previous ServicesState before this state change
      * @param advertisingState Current Bluetooth advertising state (Started, Stopped, or Failure)
@@ -59,21 +61,33 @@ internal class ServicesStateMachine {
         previousState: ServicesState,
         advertisingState: AdvertisingState,
         webServerState: WebServerState
-    ): ServicesState = when (advertisingState) {
-        AdvertisingState.Stopped if !webServerState.isReady -> {
-            ServicesState.Stopped
-        }
+    ): ServicesState {
+        val result = when (advertisingState) {
+            AdvertisingState.Stopped if !webServerState.isReady -> {
+                ServicesState.Stopped
+            }
 
-        AdvertisingState.Started if webServerState.isReady -> {
-            ServicesState.Started
-        }
+            AdvertisingState.Started if webServerState.isReady -> {
+                ServicesState.Started
+            }
 
-        else -> {
-            when (previousState) {
-                ServicesState.Started -> ServicesState.Stopping
-                ServicesState.Stopped -> ServicesState.Starting
-                else -> ServicesState.Starting
+            else -> {
+                when (previousState) {
+                    ServicesState.Started -> ServicesState.Stopping
+                    ServicesState.Stopping -> ServicesState.Stopping
+                    ServicesState.Starting -> ServicesState.Starting
+                    ServicesState.Stopped -> ServicesState.Starting
+                    is ServicesState.Error -> ServicesState.Starting
+                }
             }
         }
+
+        logger.d {
+            "State calculation: advertisingState=$advertisingState, " +
+                "webServerReady=${webServerState.isReady}, " +
+                "previousState=$previousState -> result=$result"
+        }
+
+        return result
     }
 }

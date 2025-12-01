@@ -359,30 +359,41 @@ internal class BluetoothLocalDataSourceImpl(
     /**
      * Start BLE advertising.
      * Initializes the GATT server on first call, then can be called repeatedly to toggle advertising.
+     *
+     * @throws BluetoothError.PermissionDenied if Bluetooth permissions are not granted
+     * @throws BluetoothError.InvalidState if peripheral manager is not initialized
      */
-    override fun startAdvertising() {
-        initializeGattServer()
-        peripheralManager?.let { manager ->
-            if (!manager.isAdvertising && advertisingState.value != AdvertisingState.Started) {
-                val advertiseSettings = AdvertiseSettings.Builder()
-                    .setAdvertiseMode(ADVERTISE_MODE)
-                    .setConnectable(ADVERTISE_CONNECTABLE)
-                    .setTimeout(ADVERTISE_TIMEOUT)
-                    .setTxPowerLevel(TX_POWER_LEVEL)
-                    .build()
-                val advertiseData = AdvertiseData.Builder()
-                    .setIncludeTxPowerLevel(true)
-                    .addServiceUuid(ParcelUuid(HeartRateService.HRS_SERVICE_UUID))
-                    .build()
-                val scanResponse = AdvertiseData.Builder()
-                    .setIncludeDeviceName(true)
-                    .build()
-                manager.startAdvertising(advertiseSettings, advertiseData, scanResponse)
-                logger.d("Starting advertising")
-            } else {
-                logger.d("Already advertising")
+    override suspend fun startAdvertising() {
+        try {
+            initializeGattServer()
+            peripheralManager?.let { manager ->
+                if (!manager.isAdvertising && advertisingState.value != AdvertisingState.Started) {
+                    val advertiseSettings = AdvertiseSettings.Builder()
+                        .setAdvertiseMode(ADVERTISE_MODE)
+                        .setConnectable(ADVERTISE_CONNECTABLE)
+                        .setTimeout(ADVERTISE_TIMEOUT)
+                        .setTxPowerLevel(TX_POWER_LEVEL)
+                        .build()
+                    val advertiseData = AdvertiseData.Builder()
+                        .setIncludeTxPowerLevel(true)
+                        .addServiceUuid(ParcelUuid(HeartRateService.HRS_SERVICE_UUID))
+                        .build()
+                    val scanResponse = AdvertiseData.Builder()
+                        .setIncludeDeviceName(true)
+                        .build()
+                    manager.startAdvertising(advertiseSettings, advertiseData, scanResponse)
+                    logger.d("Starting advertising")
+                } else {
+                    logger.d("Already advertising")
+                }
+            } ?: run {
+                logger.e("Cannot start advertising: peripheralManager is null")
+                throw BluetoothError.InvalidState("Bluetooth peripheral manager not initialized")
             }
-        } ?: logger.e("Cannot start advertising: peripheralManager is null")
+        } catch (e: SecurityException) {
+            logger.e("Permission denied while starting advertising", e)
+            throw BluetoothError.PermissionDenied(e)
+        }
     }
 
     @Suppress("UseOrEmpty")

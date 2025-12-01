@@ -24,21 +24,25 @@ import heartratemonitor.composeapp.generated.resources.awaiting_client
 import heartratemonitor.composeapp.generated.resources.ic_heart
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.ui.theme.Tokens
 
 /**
  * Platform-specific home screen implementation.
  *
  * Displays heart rate monitoring interface with platform-appropriate button styling:
- * - Android: Material 3 Button
- * - iOS: iOS-style button (IosButton)
+ * - Android: Material 3 Button with circular progress indicator during transitions
+ * - iOS: iOS-style button (IosButton) with circular progress indicator during transitions
+ *
+ * Shows a circular progress indicator to the right of the button text during
+ * Starting and Stopping transition states. The button is disabled during these states.
  *
  * @param onStartClick Callback when the start button is clicked.
  * @param onStopClick Callback when the stop button is clicked.
  * @param showAwaitingClient Whether to show the "Awaiting Client" message.
  * @param bpm Current heart rate in beats per minute.
  * @param isHeartBeatPulse Whether the heart animation should pulse.
- * @param showStart Whether to show the start button (true) or stop button (false).
+ * @param servicesState Current state of the services (Starting, Started, Stopping, Stopped, Error).
  * @param modifier Optional modifier for this composable.
  */
 @Composable
@@ -48,7 +52,7 @@ expect fun HomeScreen(
     showAwaitingClient: Boolean,
     bpm: Int,
     isHeartBeatPulse: Boolean,
-    showStart: Boolean,
+    servicesState: ServicesState,
     modifier: Modifier = Modifier
 )
 

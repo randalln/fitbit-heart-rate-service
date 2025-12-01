@@ -4,9 +4,7 @@ import app.cash.turbine.test
 import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.loggerConfigInit
-import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -16,184 +14,155 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import io.ktor.server.testing.testApplication
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withTimeout
-import org.junit.After
-import org.junit.Assert
 import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Rule
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.noblecow.hrservice.data.source.local.BpmReading
+import org.noblecow.hrservice.data.source.local.KtorServerConfig
+import org.noblecow.hrservice.data.source.local.KtorServerManager
 import org.noblecow.hrservice.data.source.local.Request
-import org.noblecow.hrservice.data.source.local.WebServerLocalDataSource
-import org.noblecow.hrservice.data.source.local.WebServerLocalDataSourceImpl
-import org.noblecow.hrservice.data.source.local.WebServerState
-import org.noblecow.hrservice.data.util.FAKE_BPM_START
-import org.noblecow.hrservice.data.util.PORT_LISTEN
 
+/**
+ * Unit tests for web server routing using Ktor's testApplication.
+ *
+ * These tests use Ktor's test host instead of a real server, eliminating:
+ * - Port binding conflicts
+ * - Network delays
+ * - OS-level port cleanup delays (previously 15+ seconds per test)
+ *
+ * Tests now run instantly and can be parallelized.
+ */
 class WebServerLocalDataSourceTest {
-    @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
-
-    private lateinit var webServerLocalDataSource: WebServerLocalDataSource
-    val logger = Logger(loggerConfigInit(CommonWriter()), "WebServerLocalDataSourceTest")
-
-    @Before
-    fun before() {
-        val testScope = CoroutineScope(SupervisorJob() + mainDispatcherRule.testDispatcher)
-        webServerLocalDataSource = WebServerLocalDataSourceImpl(testScope, logger)
-    }
-
-    @After
-    fun after() {
-        runBlocking {
-            try {
-                webServerLocalDataSource.stop()
-                // Wait for server to fully stop with timeout
-                withTimeout(5000) {
-                    webServerLocalDataSource.webServerState.first { !it.isReady }
-                }
-                // Netty stop() has gracePeriod=1000ms + timeout=2000ms
-                // We need to wait for the full shutdown cycle plus OS cleanup
-                // Extended delay to ensure port is fully released between test variants
-                // Total: 2000ms (Netty) + 8000ms (OS + test variant cleanup) = 10000ms
-                delay(15000)
-            } catch (e: Exception) {
-                // Ignore cleanup errors but still delay to prevent port conflicts
-                println("Cleanup error: ${e.message}")
-                delay(10000)
-            }
-        }
-    }
-
-    @Test
-    fun `Starting server is idempotent`() = runTest {
-        webServerLocalDataSource.start()
-        webServerLocalDataSource.start()
-        webServerLocalDataSource.start()
-        webServerLocalDataSource.start()
-
-        webServerLocalDataSource.webServerState.test {
-            assertEquals(
-                WebServerState(error = null, isReady = true),
-                awaitItem()
-            )
-        }
-    }
-
-    @Test
-    fun `Stopping server is idempotent`() = runTest {
-        webServerLocalDataSource.start()
-        webServerLocalDataSource.stop()
-        webServerLocalDataSource.stop()
-        webServerLocalDataSource.stop()
-        webServerLocalDataSource.stop()
-
-        webServerLocalDataSource.webServerState.test {
-            assertEquals(
-                WebServerState(error = null, isReady = false),
-                awaitItem()
-            )
-        }
-    }
-
-    @Test
-    fun `When bpm is received, a new webserver state is not emitted`() = runTest {
-        webServerLocalDataSource.start()
-
-        webServerLocalDataSource.webServerState.test {
-            skipItems(1) // Skip the start state
-            sendBpm(FAKE_BPM_START)
-            // Can fail with Unconsumed events
-        }
-    }
+    private val logger = Logger(loggerConfigInit(CommonWriter()), "WebServerTest")
 
     @Test
     fun `When bad path is requested, a 404 is received`() = runTest {
-        webServerLocalDataSource.start()
+        testApplication {
+            val bpmFlow = MutableSharedFlow<BpmReading>()
+            val serverManager = createServerManager()
 
-        val client = HttpClient(CIO) {
-            install(ContentNegotiation) {
-                json()
+            application {
+                serverManager.configureApplication(this) { bpm ->
+                    bpmFlow.emit(BpmReading(value = bpm, sequenceNumber = 1))
+                }
             }
-        }
-        val response: HttpResponse = client.post("http://localhost:$PORT_LISTEN/bad_path") {
-            contentType(ContentType.Application.Json)
-            setBody(Request(42))
-        }
 
-        assertEquals(HttpStatusCode.NotFound, response.status)
-    }
+            val client = createClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
 
-    @Test
-    fun `When web server is stopped, a new state is emitted`() = runTest {
-        webServerLocalDataSource.start()
-        webServerLocalDataSource.stop()
+            val response: HttpResponse = client.post("/bad_path") {
+                contentType(ContentType.Application.Json)
+                setBody(Request(42))
+            }
 
-        webServerLocalDataSource.webServerState.test {
-            assertEquals(
-                WebServerState(error = null, isReady = false),
-                awaitItem()
-            )
-        }
-    }
-
-    @Test
-    fun `When multiple bpm values are received, bpmFlow emits all values`() = runTest {
-        webServerLocalDataSource.start()
-
-        webServerLocalDataSource.bpmFlow.test {
-            sendBpm(60)
-            assertEquals(BpmReading(value = 60, sequenceNumber = 1), awaitItem())
-
-            sendBpm(75)
-            assertEquals(BpmReading(value = 75, sequenceNumber = 2), awaitItem())
-
-            sendBpm(90)
-            assertEquals(BpmReading(value = 90, sequenceNumber = 3), awaitItem())
+            assertEquals(HttpStatusCode.NotFound, response.status)
         }
     }
 
     @Test
     fun `When GET request is made to root, OK response is returned`() = runTest {
-        webServerLocalDataSource.start()
+        testApplication {
+            val bpmFlow = MutableSharedFlow<BpmReading>()
+            val serverManager = createServerManager()
 
-        val client = HttpClient(CIO) {
-            install(ContentNegotiation) {
-                json()
+            application {
+                serverManager.configureApplication(this) { bpm ->
+                    bpmFlow.emit(BpmReading(value = bpm, sequenceNumber = 1))
+                }
             }
-        }
-        val response: HttpResponse = client.get("http://localhost:$PORT_LISTEN/")
 
-        assertEquals(HttpStatusCode.OK, response.status)
-        val body = response.body<Map<String, String>>()
-        assertEquals("OK", body["status"])
+            val client = createClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response: HttpResponse = client.get("/")
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            val body = response.body<Map<String, String>>()
+            assertEquals("OK", body["status"])
+        }
     }
 
     @Test
-    fun `Initial webServerState has isReady false`() = runTest {
-        webServerLocalDataSource.webServerState.test {
-            val state = awaitItem()
-            assertEquals(false, state.isReady)
-            Assert.assertNull(state.error)
+    fun `When multiple bpm values are received, bpmFlow emits all values`() = runTest {
+        testApplication {
+            val bpmFlow = MutableSharedFlow<BpmReading>()
+            var sequenceNumber = 0
+            val serverManager = createServerManager()
+
+            application {
+                serverManager.configureApplication(this) { bpm ->
+                    bpmFlow.emit(BpmReading(value = bpm, sequenceNumber = ++sequenceNumber))
+                }
+            }
+
+            val client = createClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            bpmFlow.test {
+                client.post("/") {
+                    contentType(ContentType.Application.Json)
+                    setBody(Request(60))
+                }
+                assertEquals(BpmReading(value = 60, sequenceNumber = 1), awaitItem())
+
+                client.post("/") {
+                    contentType(ContentType.Application.Json)
+                    setBody(Request(75))
+                }
+                assertEquals(BpmReading(value = 75, sequenceNumber = 2), awaitItem())
+
+                client.post("/") {
+                    contentType(ContentType.Application.Json)
+                    setBody(Request(90))
+                }
+                assertEquals(BpmReading(value = 90, sequenceNumber = 3), awaitItem())
+            }
         }
     }
 
-    private suspend fun sendBpm(bpm: Int) {
-        val client = HttpClient(CIO) {
-            install(ContentNegotiation) {
-                json()
+    @Test
+    fun `When POST request is made with BPM, it is echoed back in response`() = runTest {
+        testApplication {
+            val bpmFlow = MutableSharedFlow<BpmReading>()
+            val serverManager = createServerManager()
+
+            application {
+                serverManager.configureApplication(this) { bpm ->
+                    bpmFlow.emit(BpmReading(value = bpm, sequenceNumber = 1))
+                }
             }
-        }
-        client.post("http://localhost:$PORT_LISTEN") {
-            contentType(ContentType.Application.Json)
-            setBody(Request(bpm))
+
+            val client = createClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+
+            val response: HttpResponse = client.post("/") {
+                contentType(ContentType.Application.Json)
+                setBody(Request(75))
+            }
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            val body = response.body<Request>()
+            assertEquals(75, body.bpm)
         }
     }
+
+    private fun createServerManager() = KtorServerManager(
+        config = KtorServerConfig(),
+        logger = logger
+    )
 }
