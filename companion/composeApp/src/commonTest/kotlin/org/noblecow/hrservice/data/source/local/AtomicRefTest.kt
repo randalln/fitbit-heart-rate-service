@@ -1,44 +1,68 @@
 package org.noblecow.hrservice.data.source.local
 
+import kotlin.experimental.ExperimentalNativeApi
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Test
 
+/**
+ * Tests for AtomicRef expect/actual implementation.
+ *
+ * This test class contains both unit tests and integration tests:
+ * - Simple tests use standard test assertions
+ * - Concurrency tests use runBlocking(Dispatchers.Default) to verify real thread-safety
+ *   under actual parallel execution (not virtual time)
+ */
+@OptIn(ExperimentalNativeApi::class)
 class AtomicRefTest {
 
+    // Unit Tests - Simple value operations
+
     @Test
-    fun `get returns initial value`() {
+    fun getReturnsInitialValue() {
         val atomicRef = AtomicRef("initial")
         assertEquals("initial", atomicRef.get())
     }
 
     @Test
-    fun `get returns null for null initial value`() {
+    fun getReturnsNullForNullInitialValue() {
         val atomicRef = AtomicRef<String?>(null)
         assertNull(atomicRef.get())
     }
 
     @Test
-    fun `set updates value`() {
+    fun setUpdatesValue() {
         val atomicRef = AtomicRef("initial")
         atomicRef.set("updated")
         assertEquals("updated", atomicRef.get())
     }
 
     @Test
-    fun `set can update to null`() {
+    fun setCanUpdateToNull() {
         val atomicRef = AtomicRef<String?>("initial")
         atomicRef.set(null)
         assertNull(atomicRef.get())
     }
 
+    // Integration Tests - Real concurrency verification
+    // These tests use runBlocking(Dispatchers.Default) intentionally to test actual
+    // thread-safety under real parallel execution, not virtual time.
+
+    /**
+     * Integration test: Verifies AtomicRef handles concurrent writes without crashing.
+     *
+     * Uses real multithreading (Dispatchers.Default) to catch visibility and race condition
+     * issues that wouldn't be caught with virtual time. This test is inherently non-deterministic
+     * but validates that concurrent access doesn't cause crashes or data corruption.
+     */
     @Test
-    fun `concurrent writes are thread-safe`() = runBlocking(Dispatchers.Default) {
+    fun concurrentWritesAreThreadSafe() = runBlocking(Dispatchers.Default) {
         val atomicRef = AtomicRef(0)
         val numIterations = 1000
         val numCoroutines = 10
@@ -59,14 +83,22 @@ class AtomicRefTest {
         // the final value will be <= numCoroutines * numIterations
         // But the important thing is that it doesn't crash and reads/writes are visible
         val finalValue = atomicRef.get()
-        assert(finalValue > 0) { "Expected some increments to succeed, got $finalValue" }
-        assert(finalValue <= numCoroutines * numIterations) {
+        assertTrue(finalValue > 0, "Expected some increments to succeed, got $finalValue")
+        assertTrue(
+            finalValue <= numCoroutines * numIterations,
             "Expected at most ${numCoroutines * numIterations} increments, got $finalValue"
-        }
+        )
     }
 
+    /**
+     * Integration test: Verifies AtomicRef handles concurrent reads and writes safely.
+     *
+     * Uses real multithreading (Dispatchers.Default) to validate that readers never crash
+     * or see corrupted data while writers are actively updating the value. Tests memory
+     * visibility and thread-safety guarantees.
+     */
     @Test
-    fun `concurrent reads and writes are thread-safe`() = runBlocking(Dispatchers.Default) {
+    fun concurrentReadsAndWritesAreThreadSafe() = runBlocking(Dispatchers.Default) {
         val atomicRef = AtomicRef("initial")
         val numIterations = 100
 
@@ -93,13 +125,16 @@ class AtomicRefTest {
 
         // Verify final state is valid
         val finalValue = atomicRef.get()
-        assert(finalValue.startsWith("writer-")) {
+        assertTrue(
+            finalValue.startsWith("writer-"),
             "Expected final value to start with 'writer-', got $finalValue"
-        }
+        )
     }
 
+    // Unit Tests - Instance independence and complex objects
+
     @Test
-    fun `multiple AtomicRef instances are independent`() {
+    fun multipleAtomicRefInstancesAreIndependent() {
         val ref1 = AtomicRef("value1")
         val ref2 = AtomicRef("value2")
 
@@ -111,7 +146,7 @@ class AtomicRefTest {
     }
 
     @Test
-    fun `works with complex objects`() {
+    fun worksWithComplexObjects() {
         data class TestData(
             val id: Int,
             val name: String
