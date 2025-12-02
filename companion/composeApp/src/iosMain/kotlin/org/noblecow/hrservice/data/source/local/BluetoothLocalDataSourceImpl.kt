@@ -125,6 +125,9 @@ internal class BluetoothLocalDataSourceImpl(
     // Peripheral manager - created once and reused
     private var peripheralManager: CBPeripheralManager? = null
 
+    // Peripheral manager delegate - stored as property to prevent garbage collection
+    private var peripheralDelegate: CBPeripheralManagerDelegateProtocol? = null
+
     // Heart Rate Service GATT components
     private var heartRateMeasurementChar: CBMutableCharacteristic? = null
     private var heartRateService: CBMutableService? = null
@@ -356,9 +359,8 @@ internal class BluetoothLocalDataSourceImpl(
                 central: CBCentral,
                 didSubscribeToCharacteristic: CBCharacteristic
             ) {
-                logger.d(
-                    "Central ${central.identifier} subscribed to characteristic ${didSubscribeToCharacteristic.UUID}"
-                )
+                val msg = "🔔 SUBSCRIBE! Central ${central.identifier} -> ${didSubscribeToCharacteristic.UUID}"
+                logger.d(msg)
                 subscribedCentrals.update { it + central }
                 logger.d("Subscribed centrals count: ${subscribedCentrals.value.size}")
                 scope.launch {
@@ -382,8 +384,8 @@ internal class BluetoothLocalDataSourceImpl(
                 didUnsubscribeFromCharacteristic: CBCharacteristic
             ) {
                 logger.d(
-                    "Central ${central.identifier} unsubscribed from characteristic " +
-                        "${didUnsubscribeFromCharacteristic.UUID}"
+                    "🔕 UNSUBSCRIBE CALLBACK FIRED! Central ${central.identifier} unsubscribed from " +
+                            "${didUnsubscribeFromCharacteristic.UUID}"
                 )
                 subscribedCentrals.update { it - central }
                 logger.d("Subscribed centrals count: ${subscribedCentrals.value.size}")
@@ -406,14 +408,20 @@ internal class BluetoothLocalDataSourceImpl(
                 didAddService: CBService,
                 error: NSError?
             ) {
+                logger.d("peripheralManager(_:didAddService:error:) called")
+                logger.d("Service UUID: ${didAddService.UUID}, error: ${error?.localizedDescription ?: "none"}")
+
                 if (error == null) {
                     logger.d("Heart Rate Service added successfully")
                     isServiceAdded = true
                     serviceAddRetryCount = 0 // Reset retry counter on success
                     // Start advertising if requested
                     if (shouldStartAdvertisingAfterServiceAdded) {
+                        logger.d("shouldStartAdvertisingAfterServiceAdded=true, starting advertising now")
                         shouldStartAdvertisingAfterServiceAdded = false
                         startAdvertisingInternal()
+                    } else {
+                        logger.d("shouldStartAdvertisingAfterServiceAdded=false, NOT starting advertising")
                     }
                 } else {
                     logger.e(
@@ -445,13 +453,21 @@ internal class BluetoothLocalDataSourceImpl(
             }
         }
 
+        // Store delegate as property to prevent garbage collection
+        peripheralDelegate = delegate
+
         // Create the peripheral manager once if not already created
         if (peripheralManager == null) {
+            logger.d("Creating peripheral manager with delegate on main queue")
             peripheralManager = CBPeripheralManager(
-                delegate = delegate,
+                delegate = peripheralDelegate,
                 queue = dispatch_get_main_queue()
             )
-            logger.d("Peripheral manager created")
+            logger.d("Peripheral manager created, initial state: ${peripheralManager?.state}")
+            logger.d("Delegate is set: ${peripheralManager?.delegate != null}")
+            logger.d("Delegate stored as class property for retention")
+        } else {
+            logger.d("Peripheral manager already exists, state: ${peripheralManager?.state}")
         }
 
         // Setup lifecycle observers for background/foreground transitions
@@ -522,6 +538,18 @@ internal class BluetoothLocalDataSourceImpl(
         heartRateService?.setCharacteristics(listOf(heartRateMeasurementChar!!))
 
         logger.d("Heart Rate Service created with characteristic ${heartRateMeasurementChar?.UUID}")
+
+        // Debug logging to verify characteristic configuration
+        heartRateMeasurementChar?.let { char ->
+            logger.d("=== Characteristic Debug ===")
+            logger.d("UUID: ${char.UUID}")
+            logger.d("Properties: ${char.properties}")
+            logger.d("Has NOTIFY: ${(char.properties and CBCharacteristicPropertyNotify) != 0UL}")
+            logger.d("Permissions: ${char.permissions}")
+            logger.d("Value: ${char.value}")
+            logger.d("Descriptors count: ${char.descriptors?.size ?: 0}")
+            logger.d("==========================")
+        }
     }
 
     /**
