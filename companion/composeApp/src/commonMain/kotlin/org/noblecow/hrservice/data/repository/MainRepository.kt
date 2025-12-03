@@ -6,6 +6,7 @@ import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import kotlin.concurrent.Volatile
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharedFlow
@@ -27,6 +28,7 @@ import org.noblecow.hrservice.data.source.local.BpmReading
 import org.noblecow.hrservice.data.source.local.HardwareState
 import org.noblecow.hrservice.data.source.local.WebServerLocalDataSource
 import org.noblecow.hrservice.data.util.DEFAULT_BPM
+import org.noblecow.hrservice.di.IoDispatcher
 
 data class AppState(
     val bpm: BpmReading = BpmReading(DEFAULT_BPM, 0),
@@ -65,6 +67,7 @@ internal class MainRepositoryImpl(
     private val webServerLocalDataSource: WebServerLocalDataSource,
     private val fakeBpmManager: FakeBpmManager,
     private val appScope: CoroutineScope,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     defaultLogger: Logger
 ) : MainRepository {
     private val logger = defaultLogger.withTag(TAG)
@@ -287,6 +290,7 @@ internal class MainRepositoryImpl(
     }
 
     override suspend fun stopServices(): ServiceResult<Unit> {
+        logger.d("stopServices() called")
         // Check if already stopped
         if (servicesState.value == ServicesState.Stopped) {
             logger.i("Services already stopped")
@@ -304,6 +308,7 @@ internal class MainRepositoryImpl(
             // Note: Fake BPM is user-initiated via toggleFakeBpm(), not started in startServices()
             // We defensively stop it here to ensure clean state when services shut down
             try {
+                logger.d("Calling fakeBpmManager.stop()")
                 fakeBpmManager.stop()
                 logger.d("Fake BPM manager stopped")
             } catch (e: Exception) {
@@ -313,6 +318,7 @@ internal class MainRepositoryImpl(
 
             // Stop Bluetooth
             try {
+                logger.d("Calling bluetoothLocalDataSource.stopAdvertising()")
                 bluetoothLocalDataSource.stopAdvertising()
                 logger.d("Bluetooth advertising stop initiated")
             } catch (e: Exception) {
@@ -320,9 +326,11 @@ internal class MainRepositoryImpl(
                 errors.add("Bluetooth" to e)
             }
 
-            // Stop web server
+            // Stop web server (on IO dispatcher to avoid blocking main thread)
             try {
-                webServerLocalDataSource.stop()
+                kotlinx.coroutines.withContext(ioDispatcher) {
+                    webServerLocalDataSource.stop()
+                }
                 logger.d("Web server stop initiated")
             } catch (e: Exception) {
                 logger.e("Failed to stop web server", e)
@@ -403,7 +411,9 @@ internal class MainRepositoryImpl(
         }
 
         try {
-            webServerLocalDataSource.stop()
+            kotlinx.coroutines.withContext(ioDispatcher) {
+                webServerLocalDataSource.stop()
+            }
         } catch (e: Exception) {
             logger.e("Failed to stop web server during auto-stop", e)
         }

@@ -120,7 +120,7 @@ internal class MainWorker(
         if (!this::notificationBuilder.isInitialized) {
             notificationBuilder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
                 .setContentText(DEFAULT_BPM.toString())
-                .setSmallIcon(R.drawable.ic_heart)
+                .setSmallIcon(R.drawable.cardiology_24px)
                 .setShowWhen(false)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)

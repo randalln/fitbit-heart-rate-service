@@ -33,7 +33,6 @@ import org.noblecow.hrservice.data.util.MAX_BPM
 import org.noblecow.hrservice.di.DefaultDispatcher
 import platform.CoreBluetooth.CBAdvertisementDataLocalNameKey
 import platform.CoreBluetooth.CBAdvertisementDataServiceUUIDsKey
-import platform.CoreBluetooth.CBAttributePermissionsReadable
 import platform.CoreBluetooth.CBCentral
 import platform.CoreBluetooth.CBCharacteristic
 import platform.CoreBluetooth.CBCharacteristicPropertyNotify
@@ -385,7 +384,7 @@ internal class BluetoothLocalDataSourceImpl(
             ) {
                 logger.d(
                     "🔕 UNSUBSCRIBE CALLBACK FIRED! Central ${central.identifier} unsubscribed from " +
-                            "${didUnsubscribeFromCharacteristic.UUID}"
+                        "${didUnsubscribeFromCharacteristic.UUID}"
                 )
                 subscribedCentrals.update { it - central }
                 logger.d("Subscribed centrals count: ${subscribedCentrals.value.size}")
@@ -393,6 +392,53 @@ internal class BluetoothLocalDataSourceImpl(
                     val connected = subscribedCentrals.value.isNotEmpty()
                     logger.d("Emitting clientConnectedState: $connected")
                     _clientConnectedState.emit(connected)
+                }
+            }
+
+            /**
+             * Called when a central requests to read a characteristic value.
+             * This should not happen for NOTIFY-only characteristics, but logging for debugging.
+             */
+            override fun peripheralManager(
+                peripheral: CBPeripheralManager,
+                didReceiveReadRequest: platform.CoreBluetooth.CBATTRequest
+            ) {
+                logger.w(
+                    "⚠️ READ REQUEST from ${didReceiveReadRequest.central.identifier} " +
+                        "for characteristic ${didReceiveReadRequest.characteristic.UUID}"
+                )
+                // Respond with "attribute not readable" error
+                peripheral.respondToRequest(
+                    didReceiveReadRequest,
+                    withResult = platform.CoreBluetooth.CBATTErrorAttributeNotFound
+                )
+            }
+
+            /**
+             * Called when a central requests to write to a characteristic.
+             * CCCD writes should be handled automatically by CoreBluetooth.
+             */
+            override fun peripheralManager(
+                peripheral: CBPeripheralManager,
+                didReceiveWriteRequests: List<*>
+            ) {
+                logger.d("✍️ WRITE REQUESTS received, count: ${didReceiveWriteRequests.size}")
+                didReceiveWriteRequests.forEach { request ->
+                    val req = request as? platform.CoreBluetooth.CBATTRequest
+                    req?.let {
+                        logger.d(
+                            "  Write from ${it.central.identifier} " +
+                                "to ${it.characteristic.UUID}, value: ${it.value}"
+                        )
+                    }
+                }
+                // Respond success to all write requests
+                val firstRequest = didReceiveWriteRequests.firstOrNull() as? platform.CoreBluetooth.CBATTRequest
+                if (firstRequest != null) {
+                    peripheral.respondToRequest(
+                        firstRequest,
+                        withResult = platform.CoreBluetooth.CBATTErrorSuccess
+                    )
                 }
             }
 
@@ -523,11 +569,12 @@ internal class BluetoothLocalDataSourceImpl(
         }
 
         // Create Heart Rate Measurement characteristic with NOTIFY property
+        // No permissions needed for NOTIFY-only characteristic (prevents pairing prompts)
         heartRateMeasurementChar = CBMutableCharacteristic(
             type = CBUUID.UUIDWithString(HR_MEASUREMENT_CHAR_UUID_VAL),
             properties = CBCharacteristicPropertyNotify,
             value = null, // Value is dynamic, set during notifications
-            permissions = CBAttributePermissionsReadable
+            permissions = 0u // No read/write permissions = no pairing required
         )
 
         // Create Heart Rate Service

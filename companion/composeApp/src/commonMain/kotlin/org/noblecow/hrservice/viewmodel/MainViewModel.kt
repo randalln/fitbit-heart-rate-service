@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.runningFold
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -113,6 +114,11 @@ internal class MainViewModel(
                     }
                 }
             }
+            .shareIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                replay = 1
+            )
             .also { stateTransitionFlow ->
                 // Separate logging flow that only logs when services state changes
                 stateTransitionFlow
@@ -166,7 +172,9 @@ internal class MainViewModel(
     }
 
     fun stop() {
+        logger.d("Stop button tapped - launching coroutine")
         viewModelScope.launch {
+            logger.d("Coroutine started - calling repository.stopServices()")
             when (val result = mainRepository.stopServices()) {
                 is ServiceResult.Success -> {
                     logger.d("Initiated stop services")
@@ -180,6 +188,7 @@ internal class MainViewModel(
                     }
                 }
             }
+            logger.d("stop() coroutine completed")
         }
     }
 

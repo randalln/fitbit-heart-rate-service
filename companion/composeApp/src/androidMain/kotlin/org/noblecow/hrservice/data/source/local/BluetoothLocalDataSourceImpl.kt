@@ -27,13 +27,9 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.noblecow.hrservice.data.source.local.blessed.HeartRateService
 import org.noblecow.hrservice.data.source.local.blessed.Service
@@ -82,195 +78,182 @@ internal class BluetoothLocalDataSourceImpl(
     private val _clientConnectedState = MutableStateFlow(false)
     override val clientConnectedState = _clientConnectedState.asStateFlow()
 
+    private val _advertisingState = MutableStateFlow<AdvertisingState>(AdvertisingState.Stopped)
+    override val advertisingState: StateFlow<AdvertisingState> = _advertisingState.asStateFlow()
+
     /**
-     * Peripheral manager instance created outside the flow lifecycle.
-     * This allows it to persist across flow collection/cancellation cycles.
+     * Peripheral manager instance created once and reused.
      */
     @Volatile
     private var peripheralManager: BluetoothPeripheralManager? = null
 
     /**
-     * Flow of advertising state changes from the BLE peripheral manager.
-     * Uses callbackFlow to convert callback-based API to Flow.
-     * The peripheral manager is created once and reused for repeated start/stop cycles.
+     * Callback for BLE peripheral manager events.
+     * Updates advertising state in response to system callbacks.
      */
     @Suppress("TooManyFunctions")
-    override val advertisingState: StateFlow<AdvertisingState> = callbackFlow {
-        val callback = object : BluetoothPeripheralManagerCallback() {
-            override fun onCharacteristicRead(
-                bluetoothCentral: BluetoothCentral,
-                characteristic: BluetoothGattCharacteristic
-            ): ReadResponse {
-                val serviceImplementation = serviceImplementations[characteristic.service]
-                return serviceImplementation?.onCharacteristicRead(
-                    bluetoothCentral,
-                    characteristic
-                ) ?: super.onCharacteristicRead(bluetoothCentral, characteristic)
-            }
+    private val peripheralCallback = object : BluetoothPeripheralManagerCallback() {
+        override fun onCharacteristicRead(
+            bluetoothCentral: BluetoothCentral,
+            characteristic: BluetoothGattCharacteristic
+        ): ReadResponse {
+            val serviceImplementation = serviceImplementations[characteristic.service]
+            return serviceImplementation?.onCharacteristicRead(
+                bluetoothCentral,
+                characteristic
+            ) ?: super.onCharacteristicRead(bluetoothCentral, characteristic)
+        }
 
-            override fun onCharacteristicWrite(
-                bluetoothCentral: BluetoothCentral,
-                characteristic: BluetoothGattCharacteristic,
-                value: ByteArray
-            ): GattStatus {
-                val serviceImplementation = serviceImplementations[characteristic.service]
-                return serviceImplementation?.onCharacteristicWrite(
-                    bluetoothCentral,
-                    characteristic,
-                    value
-                ) ?: GattStatus.REQUEST_NOT_SUPPORTED
-            }
+        override fun onCharacteristicWrite(
+            bluetoothCentral: BluetoothCentral,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray
+        ): GattStatus {
+            val serviceImplementation = serviceImplementations[characteristic.service]
+            return serviceImplementation?.onCharacteristicWrite(
+                bluetoothCentral,
+                characteristic,
+                value
+            ) ?: GattStatus.REQUEST_NOT_SUPPORTED
+        }
 
-            override fun onCharacteristicWriteCompleted(
-                bluetoothCentral: BluetoothCentral,
-                characteristic: BluetoothGattCharacteristic,
-                value: ByteArray
-            ) {
-                val serviceImplementation = serviceImplementations[characteristic.service]
-                serviceImplementation?.onCharacteristicWriteCompleted(
-                    bluetoothCentral,
-                    characteristic,
-                    value
-                )
-            }
+        override fun onCharacteristicWriteCompleted(
+            bluetoothCentral: BluetoothCentral,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray
+        ) {
+            val serviceImplementation = serviceImplementations[characteristic.service]
+            serviceImplementation?.onCharacteristicWriteCompleted(
+                bluetoothCentral,
+                characteristic,
+                value
+            )
+        }
 
-            override fun onDescriptorRead(
-                bluetoothCentral: BluetoothCentral,
-                descriptor: BluetoothGattDescriptor
-            ): ReadResponse {
-                val characteristic =
-                    requireNotNull(descriptor.characteristic) { "Descriptor has no Characteristic" }
-                val service =
-                    requireNotNull(characteristic.service) { "Characteristic has no Service" }
-                val serviceImplementation = serviceImplementations[service]
-                return serviceImplementation?.onDescriptorRead(
-                    bluetoothCentral,
-                    descriptor
-                ) ?: super.onDescriptorRead(bluetoothCentral, descriptor)
-            }
+        override fun onDescriptorRead(
+            bluetoothCentral: BluetoothCentral,
+            descriptor: BluetoothGattDescriptor
+        ): ReadResponse {
+            val characteristic =
+                requireNotNull(descriptor.characteristic) { "Descriptor has no Characteristic" }
+            val service =
+                requireNotNull(characteristic.service) { "Characteristic has no Service" }
+            val serviceImplementation = serviceImplementations[service]
+            return serviceImplementation?.onDescriptorRead(
+                bluetoothCentral,
+                descriptor
+            ) ?: super.onDescriptorRead(bluetoothCentral, descriptor)
+        }
 
-            override fun onDescriptorWrite(
-                bluetoothCentral: BluetoothCentral,
-                descriptor: BluetoothGattDescriptor,
-                value: ByteArray
-            ): GattStatus {
-                val characteristic =
-                    requireNotNull(descriptor.characteristic) { "Descriptor has no Characteristic" }
-                val service =
-                    requireNotNull(characteristic.service) { "Characteristic has no Service" }
-                val serviceImplementation = serviceImplementations[service]
-                return serviceImplementation?.onDescriptorWrite(
-                    bluetoothCentral,
-                    descriptor,
-                    value
-                ) ?: GattStatus.REQUEST_NOT_SUPPORTED
-            }
+        override fun onDescriptorWrite(
+            bluetoothCentral: BluetoothCentral,
+            descriptor: BluetoothGattDescriptor,
+            value: ByteArray
+        ): GattStatus {
+            val characteristic =
+                requireNotNull(descriptor.characteristic) { "Descriptor has no Characteristic" }
+            val service =
+                requireNotNull(characteristic.service) { "Characteristic has no Service" }
+            val serviceImplementation = serviceImplementations[service]
+            return serviceImplementation?.onDescriptorWrite(
+                bluetoothCentral,
+                descriptor,
+                value
+            ) ?: GattStatus.REQUEST_NOT_SUPPORTED
+        }
 
-            override fun onNotifyingEnabled(
-                bluetoothCentral: BluetoothCentral,
-                characteristic: BluetoothGattCharacteristic
-            ) {
-                val serviceImplementation = serviceImplementations[characteristic.service]
-                serviceImplementation?.onNotifyingEnabled(bluetoothCentral, characteristic)?.let {
-                    if (it) {
-                        localScope.launch {
-                            _clientConnectedState.emit(true)
-                        }
-                    }
-                }
-            }
-
-            override fun onNotifyingDisabled(
-                bluetoothCentral: BluetoothCentral,
-                characteristic: BluetoothGattCharacteristic
-            ) {
-                val serviceImplementation = serviceImplementations[characteristic.service]
-                serviceImplementation?.onNotifyingDisabled(bluetoothCentral, characteristic)
-            }
-
-            override fun onNotificationSent(
-                bluetoothCentral: BluetoothCentral,
-                value: ByteArray,
-                characteristic: BluetoothGattCharacteristic,
-                status: GattStatus
-            ) {
-                val serviceImplementation = serviceImplementations[characteristic.service]
-                serviceImplementation?.onNotificationSent(
-                    bluetoothCentral,
-                    value,
-                    characteristic,
-                    status
-                )
-            }
-
-            override fun onCentralConnected(bluetoothCentral: BluetoothCentral) {
-                for (serviceImplementation in serviceImplementations.values) {
-                    serviceImplementation.onCentralConnected(bluetoothCentral)
-                }
-            }
-
-            override fun onCentralDisconnected(bluetoothCentral: BluetoothCentral) {
-                for (serviceImplementation in serviceImplementations.values) {
-                    serviceImplementation.onCentralDisconnected(bluetoothCentral)
-                }
-                if (peripheralManager?.connectedCentrals?.isEmpty() == true) {
+        override fun onNotifyingEnabled(
+            bluetoothCentral: BluetoothCentral,
+            characteristic: BluetoothGattCharacteristic
+        ) {
+            val serviceImplementation = serviceImplementations[characteristic.service]
+            serviceImplementation?.onNotifyingEnabled(bluetoothCentral, characteristic)?.let {
+                if (it) {
                     localScope.launch {
-                        _clientConnectedState.emit(false)
+                        _clientConnectedState.emit(true)
                     }
                 }
             }
+        }
 
-            override fun onAdvertisingStarted(settingsInEffect: AdvertiseSettings) {
-                logger.d("Advertising started")
-                trySend(AdvertisingState.Started)
-            }
+        override fun onNotifyingDisabled(
+            bluetoothCentral: BluetoothCentral,
+            characteristic: BluetoothGattCharacteristic
+        ) {
+            val serviceImplementation = serviceImplementations[characteristic.service]
+            serviceImplementation?.onNotifyingDisabled(bluetoothCentral, characteristic)
+        }
 
-            override fun onAdvertisingStopped() {
-                logger.d("Advertising stopped")
-                trySend(AdvertisingState.Stopped)
-            }
+        override fun onNotificationSent(
+            bluetoothCentral: BluetoothCentral,
+            value: ByteArray,
+            characteristic: BluetoothGattCharacteristic,
+            status: GattStatus
+        ) {
+            val serviceImplementation = serviceImplementations[characteristic.service]
+            serviceImplementation?.onNotificationSent(
+                bluetoothCentral,
+                value,
+                characteristic,
+                status
+            )
+        }
 
-            override fun onAdvertiseFailure(advertiseError: AdvertiseError) {
-                logger.d("${advertiseError.name} ${advertiseError.value}")
-                trySend(AdvertisingState.Failure)
+        override fun onCentralConnected(bluetoothCentral: BluetoothCentral) {
+            for (serviceImplementation in serviceImplementations.values) {
+                serviceImplementation.onCentralConnected(bluetoothCentral)
             }
         }
 
-        // Create the peripheral manager once if not already created
-        if (peripheralManager == null) {
-            peripheralManager = bluetoothManager?.let { manager ->
-                try {
-                    manager.adapter.name = Build.MODEL
-                } catch (e: SecurityException) {
-                    logger.w("Unable to set Bluetooth adapter name: ${e.message}")
+        override fun onCentralDisconnected(bluetoothCentral: BluetoothCentral) {
+            for (serviceImplementation in serviceImplementations.values) {
+                serviceImplementation.onCentralDisconnected(bluetoothCentral)
+            }
+            if (peripheralManager?.connectedCentrals?.isEmpty() == true) {
+                localScope.launch {
+                    _clientConnectedState.emit(false)
                 }
-                BluetoothPeripheralManager(
-                    context,
-                    manager,
-                    callback
-                )
             }
-            logger.d("Peripheral manager created")
         }
 
-        // Send initial state
-        val initialState = if (peripheralManager?.isAdvertising == true) {
-            AdvertisingState.Started
-        } else {
-            AdvertisingState.Stopped
+        override fun onAdvertisingStarted(settingsInEffect: AdvertiseSettings) {
+            logger.d("Advertising started")
+            localScope.launch {
+                _advertisingState.emit(AdvertisingState.Started)
+            }
         }
-        trySend(initialState)
 
-        awaitClose {
-            // Flow cancelled - peripheral manager persists and is NOT closed here
-            // It will be cleaned up when the entire class instance is destroyed
-            logger.d("advertisingState flow closed (peripheral manager persists)")
+        override fun onAdvertisingStopped() {
+            logger.d("Advertising stopped")
+            localScope.launch {
+                _advertisingState.emit(AdvertisingState.Stopped)
+            }
         }
-    }.stateIn(
-        scope = localScope,
-        started = SharingStarted.Eagerly,
-        initialValue = AdvertisingState.Stopped
-    )
+
+        override fun onAdvertiseFailure(advertiseError: AdvertiseError) {
+            logger.d("${advertiseError.name} ${advertiseError.value}")
+            localScope.launch {
+                _advertisingState.emit(AdvertisingState.Failure)
+            }
+        }
+    }
+
+    init {
+        // Create peripheral manager on initialization
+        peripheralManager = bluetoothManager?.let { manager ->
+            try {
+                manager.adapter.name = Build.MODEL
+            } catch (e: SecurityException) {
+                logger.w("Unable to set Bluetooth adapter name: ${e.message}")
+            }
+            BluetoothPeripheralManager(
+                context,
+                manager,
+                peripheralCallback
+            )
+        }
+        logger.d("Peripheral manager created")
+    }
 
     override fun getHardwareState(): HardwareState = bluetoothManager?.let { manager ->
         val bluetoothAdapter = manager.adapter
@@ -331,11 +314,14 @@ internal class BluetoothLocalDataSourceImpl(
 
     /**
      * Stop advertising.
+     * Emits Stopping state immediately, then delegates to peripheral manager.
      * The GATT server and peripheral manager remain active for future advertising cycles.
      */
     override fun stopAdvertising() {
         peripheralManager?.let { manager ->
             if (manager.isAdvertising) {
+                // Emit Stopping state immediately for responsive UI (synchronous)
+                _advertisingState.value = AdvertisingState.Stopping
                 manager.stopAdvertising()
                 logger.d("Stopping advertising")
             } else {

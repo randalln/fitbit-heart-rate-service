@@ -47,10 +47,7 @@ internal class WebServerLocalDataSourceImpl(
 ) : WebServerLocalDataSource {
     val logger = defaultLogger.withTag(TAG)
 
-    private val serverManager = KtorServerManager(
-        config = KtorServerConfig(),
-        logger = logger
-    )
+    private val serverManager = KtorServerManager(logger = logger)
 
     // BpmReading with sequence number ensures each emission is unique even if BPM value repeats
     private var bpmSequenceNumber = 0
@@ -179,6 +176,10 @@ internal class WebServerLocalDataSourceImpl(
         serverMutex.withLock {
             (ktorServer as? EmbeddedServer<*, *>)?.let { server ->
                 if (internalKtorState != ApplicationStopped) {
+                    // Emit not-ready state immediately for responsive UI
+                    _webServerState.update {
+                        WebServerState(isReady = false, error = null)
+                    }
                     logger.d { "Stopping server, waiting for graceful shutdown" }
                     try {
                         server.stop(STOP_GRACE_PERIOD_MS, STOP_TIMEOUT_MS)
@@ -190,6 +191,10 @@ internal class WebServerLocalDataSourceImpl(
                 }
             }
             if (ktorServer != null) {
+                // Emit not-ready state immediately
+                _webServerState.update {
+                    WebServerState(isReady = false, error = null)
+                }
                 ktorServer = null
                 internalKtorState = ApplicationStopped
             }

@@ -28,13 +28,9 @@ private const val BPM_EMIT_TIMEOUT_MS = 5000L
  * Shared configuration and routing logic for the Ktor web server.
  *
  * Handles common server setup including content negotiation, routing,
- * and BPM request processing. Platform-specific configuration is delegated
- * to [KtorServerConfig].
+ * and BPM request processing.
  */
-internal class KtorServerManager(
-    private val config: KtorServerConfig,
-    private val logger: Logger
-) {
+internal class KtorServerManager(private val logger: Logger) {
     private val currentRequest = AtomicRef<Request?>(null)
 
     /**
@@ -52,9 +48,6 @@ internal class KtorServerManager(
             install(ContentNegotiation) {
                 json()
             }
-
-            // Apply platform-specific configuration (e.g., CallLogging on Android)
-            config.configureApplication(this, logger) { currentRequest.get()?.bpm }
 
             // Configure routes
             routing {

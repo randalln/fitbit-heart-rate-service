@@ -80,6 +80,7 @@ class MainRepositoryTest {
             webServerLocalDataSource,
             fakeBpmManager,
             testScope,
+            mainDispatcherRule.testDispatcher, // IO dispatcher for tests
             logger
         )
     }

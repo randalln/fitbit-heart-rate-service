@@ -21,7 +21,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.noblecow.hrservice.data.source.local.BpmReading
-import org.noblecow.hrservice.data.source.local.KtorServerConfig
 import org.noblecow.hrservice.data.source.local.KtorServerManager
 import org.noblecow.hrservice.data.source.local.Request
 
@@ -161,8 +160,5 @@ class WebServerLocalDataSourceTest {
         }
     }
 
-    private fun createServerManager() = KtorServerManager(
-        config = KtorServerConfig(),
-        logger = logger
-    )
+    private fun createServerManager() = KtorServerManager(logger = logger)
 }
