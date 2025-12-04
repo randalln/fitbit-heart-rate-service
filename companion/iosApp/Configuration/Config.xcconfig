@@ -1,6 +1,6 @@
 TEAM_ID=
 
-PRODUCT_NAME=HeartRateMonitor
+PRODUCT_NAME=HR Monitor
 PRODUCT_BUNDLE_IDENTIFIER=org.noblecow.heartratemonitor.HeartRateMonitor$(TEAM_ID)
 
 CURRENT_PROJECT_VERSION=1
