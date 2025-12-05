@@ -18,10 +18,17 @@ tasks.register<Exec>("buildIosIpa") {
     val iosAppDir = layout.projectDirectory.dir("iosApp")
     workingDir = iosAppDir.asFile
 
+    // Get version from composeApp
+    val composeAppProject = project(":composeApp")
+    val versionName = composeAppProject.extensions.findByType(com.android.build.gradle.internal.dsl.BaseAppModuleExtension::class.java)
+        ?.defaultConfig?.versionName ?: "1.0"
+    val versionCode = composeAppProject.extensions.findByType(com.android.build.gradle.internal.dsl.BaseAppModuleExtension::class.java)
+        ?.defaultConfig?.versionCode ?: 1
+
     commandLine(
         "sh", "-c", """
             set -e
-            echo "Building iOS archive..."
+            echo "Building iOS archive with version $versionName ($versionCode)..."
             xcodebuild clean archive \
                 -project iosApp.xcodeproj \
                 -scheme iosApp \
@@ -30,7 +37,9 @@ tasks.register<Exec>("buildIosIpa") {
                 CODE_SIGN_IDENTITY="-" \
                 CODE_SIGNING_REQUIRED=NO \
                 CODE_SIGNING_ALLOWED=NO \
-                DEVELOPMENT_TEAM=""
+                DEVELOPMENT_TEAM="" \
+                MARKETING_VERSION="$versionName" \
+                CURRENT_PROJECT_VERSION="$versionCode"
 
             echo "Creating IPA manually (AltStore will re-sign)..."
             rm -rf build/Payload
