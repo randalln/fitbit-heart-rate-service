@@ -5,7 +5,7 @@
     "website": "https://github.com/randalln/fitbit-heart-rate-service",
     "tintColor": "#E91E63",
     "featuredApps": [
-        "org.noblecow.hrservice"
+        "org.noblecow.heartratemonitor.HeartRateMonitor"
     ],
     "apps": [
         {
