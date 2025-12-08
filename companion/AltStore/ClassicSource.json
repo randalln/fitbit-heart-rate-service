@@ -1,5 +1,5 @@
 {
-    "name": "Virtual Heart Rate Monitor",
+    "name": "FB Heart Rate Monitor",
     "subtitle": "Share Fitbit heart rate with exercise equipment",
     "description": "An open source app that creates a virtual Bluetooth heart rate monitor, allowing you to share real-time heart rate data from your Fitbit watch with exercise equipment and fitness apps.",
     "website": "https://github.com/randalln/fitbit-heart-rate-service",
@@ -9,11 +9,11 @@
     ],
     "apps": [
         {
-            "name": "Virtual Heart Rate Monitor",
+            "name": "FB Heart Rate Monitor",
             "bundleIdentifier": "org.noblecow.heartratemonitor.HeartRateMonitor",
             "developerName": "Randall Norviel",
             "subtitle": "Share Fitbit HR with exercise equipment",
-            "localizedDescription": "Virtual Heart Rate Monitor creates a mock Bluetooth Low Energy heart rate monitor that broadcasts real-time heart rate data from your Fitbit watch.\n\nThis lets you share heart rate data with exercise equipment like Peloton, or fitness apps like Strava, Zwift, and Wahoo.\n\nHow it works:\n• Install the companion Fitbit watch app from the Fitbit Gallery\n• Start the HR Service app on your Fitbit watch\n• Start Virtual Heart Rate Monitor on your iOS device\n• Your device will appear as a Bluetooth heart rate monitor to other equipment\n\nRequirements:\n• A Fitbit Sense or Versa 3 smart watch\n• The \"HR Service\" Fitbit watch app (available in Fitbit Gallery)\n• iOS 15.6 or later\n\nFeatures:\n• Real-time heart rate broadcasting\n• Standard Bluetooth Low Energy heart rate monitor protocol\n• Works with any equipment that supports Bluetooth HR monitors\n• Background mode support for continuous operation\n\nOriginally created by @mogenson, expanded by @randalln with contributions from @cwcpers.",
+            "localizedDescription": "Creates a mock Bluetooth Low Energy heart rate monitor that broadcasts real-time heart rate data from your Fitbit watch.\n\nThis lets you share heart rate data with exercise equipment like Peloton, or fitness apps like Strava, Zwift, and Wahoo.\n\nHow it works:\n• Install the companion Fitbit watch app from the Fitbit Gallery\n• Start the HR Service app on your Fitbit watch\n• Start FB Heart Rate Monitor on your iOS device\n• Your device will appear as a Bluetooth heart rate monitor to other equipment\n\nRequirements:\n• A Fitbit Sense or Versa 3 smart watch\n• The \"HR Service\" Fitbit watch app (available in Fitbit Gallery)\n• iOS 15.6 or later\n\nFeatures:\n• Real-time heart rate broadcasting\n• Standard Bluetooth Low Energy heart rate monitor protocol\n• Works with any equipment that supports Bluetooth HR monitors\n• Background mode support for continuous operation\n\nOriginally created by @mogenson, expanded by @randalln with contributions from @cwcpers.",
             "iconURL": "https://raw.githubusercontent.com/randalln/fitbit-heart-rate-service/main/companion/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/icon-1024.png",
             "tintColor": "#E91E63",
             "category": "health-and-fitness",
