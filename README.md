@@ -28,9 +28,8 @@ Much thanks to the original author, [@mogenson](https://github.com/mogenson/fitb
 2. If you plan on running a fitness app on a mobile device, e.g. Strava, you'll need a second 
    device, because FB Heart Rate Monitor will need to run on the same (bluetooth) device as the 
    Fitbit&trade; app.  
-   For example, I run Wahoo or Strava on my regular phone (where Fitbit&trade; is installed) and 
-   FB Heart Rate Monitor on my iPad or spare old Android phone.
-   
+   For example, I run Wahoo or Strava on my iPad or spare old Android phone and FB Heart Rate 
+   Monitor on my regular phone (where Fitbit&trade; is installed)   
 
 ## Installation
 
