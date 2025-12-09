@@ -53,9 +53,6 @@ captures/
 *.jks
 *.keystore
 
-# Google Services (e.g. APIs or Firebase)
-# google-services.json
-
 # Android Patch
 gen-external-apklibs
 
@@ -136,6 +133,7 @@ fabric.properties
 
 # End of https://www.toptal.com/developers/gitignore/api/androidstudio
 
+.idea/copilot.*
 .idea/deploymentTargetDropDown.xml
 .idea/deploymentTargetSelector.xml
 .idea/ktlint-plugin.xml
@@ -143,10 +141,19 @@ fabric.properties
 .idea/androidTestResultsUserPreferences.xml
 .idea/deviceManager.xml
 .idea/markdown.xml
+.idea/runConfigurations
 .DS_Store
 keystore.properties
 lint-rules
 .kotlin
+composeApp/release
+
+# Android/KMP-specific secrets and credentials
+# Generic patterns (*.key, *.pem, *.env, etc.) handled by root .gitignore
+secrets.properties
+api-keys.properties
+google-services.json
+GoogleService-Info.plist
 
 # Xcode user-specific files
 **/xcuserdata/
