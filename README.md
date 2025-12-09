@@ -23,7 +23,7 @@ Much thanks to the original author, [@mogenson](https://github.com/mogenson/fitb
 
 ## Requirements
 
-1. A Fitbit Sense or Versa 3 smart watch (or an OS 5 device noted above) and a device running at 
+1. A Fitbit Sense or Versa 3 smart watch (or an OS 4 device noted above) and a device running at 
    least Android 9.0 (Pie) or iOS 15.6.
 2. If you plan on running a fitness app on a mobile device, e.g. Strava, you'll need a second 
    device, because FB Heart Rate Monitor will need to run on the same (bluetooth) device as the 
