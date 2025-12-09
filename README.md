@@ -10,8 +10,6 @@ Peloton, Strava, Zwift, or Wahoo.
 [watch app](https://gallery.fitbit.com/search?terms=HR%20Service)
 working on [OS 4 devices](https://gallery.fitbit.com/details/799d08f9-77d4-4a73-81dc-b187159a7124?key=c05ef0f4-c8f7-4459-94f7-50a209108fc6) too! (Versa 2, Versa Lite, Versa, Ionic)
 
-![Apps](./apps.jpg)
-
 Currently, the Fitbit smart watches measure heart rate, but do not advertise as generic heart 
 rate monitors and can only maintain one Bluetooth Low Energy connection with the Fibit phone app.
 As a work around, we'll send heart rate data from the watch to the phone. Then, we'll run an 
