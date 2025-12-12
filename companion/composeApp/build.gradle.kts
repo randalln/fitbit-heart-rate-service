@@ -90,7 +90,6 @@ kotlin {
             implementation(libs.aboutlibraries.compose.m3)
             api(libs.lifecycle.viewmodel.compose)
             implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.coroutines.core)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.content.negotiation)
@@ -133,7 +132,6 @@ kotlin {
             implementation(libs.ktor.server.test.host)
             implementation(libs.logback.classic)
             implementation(libs.turbine)
-            implementation(libs.work.runtime.ktx)
         }
         androidInstrumentedTest.dependencies {
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
@@ -145,7 +143,6 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
             implementation(libs.ktor.server.cio)
-            implementation(libs.ktor.server.core)
         }
         iosTest.dependencies {
             implementation(libs.kotlin.test)
@@ -170,9 +167,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures {
-        viewBinding = true
         buildConfig = true
-        compose = true
     }
     signingConfigs {
         create("release") {
@@ -219,7 +214,6 @@ android {
     }
     kotlin {
         compilerOptions {
-            // jvmTarget.set(JvmTarget.JVM_17)
             allWarningsAsErrors = true
             freeCompilerArgs = listOf(
                 "-Xwhen-guards",
