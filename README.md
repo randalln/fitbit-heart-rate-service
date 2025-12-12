@@ -3,16 +3,14 @@
 A pair of apps: one for a Fitbit&trade; smart watch, and one for an Android or iOS device, that 
 create a mock Bluetooth heart rate monitor.
 
-This lets you share real time heart rate data from the Fitbit watch with exercise equipment (like 
-Peloton) or fitness apps (like Strava, Zwift, or Wahoo).
+This lets you share real time heart rate data from the Fitbit&trade; watch with exercise equipment (like Peloton) or fitness apps (like Strava, Zwift, or Wahoo).
 
 Currently, the Fitbit&trade; smart watches measure heart rate, but do not advertise as generic 
 heart rate monitors and can only maintain one Bluetooth Low Energy connection with the 
 Fitbit&trade; mobile app.
 As a workaround, we'll send heart rate data from the watch to the mobile device. Then, we'll run 
 our app that appears as a Bluetooth Low Energy peripheral and advertises as a generic heart 
-rate monitor. Finally, we'll push heart rate data from the Fitbit mobile app to our **FB Heart Rate 
-Monitor** app.
+rate monitor. Finally, we'll push heart rate data from the Fitbit&trade; mobile app to our **FB Heart Rate Monitor** app.
 
 Much thanks to the original author, [@mogenson](https://github.com/mogenson/fitbit-heart-rate-service)
 
@@ -31,7 +29,7 @@ who got the watch app working on OS 4 devices (Versa 2, Versa Lite, Versa, Ionic
 
 ## Installation
 
-1. Install the **HR Service** Fitbit watch app from the Fitbit Gallery
+1. Install the **HR Service** Fitbit&trade; watch app from the Fitbit Gallery
     * [Sense, Versa 3](https://gallery.fitbit.com/details/6503a799-37f7-43bf-8775-23f1742e2a4e) 
     * [Versa 2, Versa Lite, Versa, Ionic](https://gallery.fitbit.com/details/799d08f9-77d4-4a73-81dc-b187159a7124?key=c05ef0f4-c8f7-4459-94f7-50a209108fc6)
 2. Install the **FB Heart Rate Monitor** app:
@@ -44,7 +42,7 @@ who got the watch app working on OS 4 devices (Versa 2, Versa Lite, Versa, Ionic
 
 
 ## Usage
-1. Start the **HR Service** app on the Fitbit watch.
+1. Start the **HR Service** app on the Fitbit&trade; watch.
 2. Start the **FB Heart Rate Monitor** app on the mobile device.
     - You should see the BPM value update with each new received value.
 3. On your exercise equipment or an app like Strava (on your second mobile device), search for a 
