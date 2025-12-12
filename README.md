@@ -11,7 +11,7 @@ heart rate monitors and can only maintain one Bluetooth Low Energy connection wi
 Fitbit&trade; mobile app.
 As a workaround, we'll send heart rate data from the watch to the mobile device. Then, we'll run 
 our app that appears as a Bluetooth Low Energy peripheral and advertises as a generic heart 
-rate monitor. Finally, we'll push heart rate data from the Fitbit Android app to our **FB Heart Rate 
+rate monitor. Finally, we'll push heart rate data from the Fitbit mobile app to our **FB Heart Rate 
 Monitor** app.
 
 Much thanks to the original author, [@mogenson](https://github.com/mogenson/fitbit-heart-rate-service)
@@ -54,7 +54,7 @@ who got the watch app working on OS 4 devices (Versa 2, Versa Lite, Versa, Ionic
     
 ### Disclaimer
 
-No implied warranty or guarantee of functionality. The names Fitbit, Android, and Bluetooth are 
-trademarks of their respective owners. 
+No implied warranty or guarantee of functionality. The names Fitbit, Android, iOS, and Bluetooth 
+are trademarks of their respective owners. 
 
 [Privacy Policy](privacy-android.md)
