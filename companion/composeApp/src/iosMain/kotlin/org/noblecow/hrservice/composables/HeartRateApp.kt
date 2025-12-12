@@ -10,8 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import co.touchlab.kermit.Logger
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 import org.noblecow.hrservice.viewmodel.MainViewModel
-import org.noblecow.hrservice.viewmodel.metroViewModel
 
 private const val TAG = "HeartRateApp"
 
@@ -30,9 +30,9 @@ private const val TAG = "HeartRateApp"
 @Composable
 internal fun HeartRateApp(
     modifier: Modifier = Modifier,
+    viewModel: MainViewModel = metroViewModel(),
     navController: NavHostController = rememberNavController()
 ) {
-    val viewModel = metroViewModel<MainViewModel>()
     val logger = Logger.withTag(TAG)
     val uiState by viewModel.mainUiState.collectAsState()
 

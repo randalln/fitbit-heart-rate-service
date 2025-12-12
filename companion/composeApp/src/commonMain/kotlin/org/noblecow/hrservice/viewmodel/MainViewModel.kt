@@ -3,8 +3,10 @@ package org.noblecow.hrservice.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
+import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import heartratemonitor.composeapp.generated.resources.Res
 import heartratemonitor.composeapp.generated.resources.permissions_denied
 import kotlin.time.TimeSource
@@ -30,7 +32,6 @@ import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.data.repository.toMessage
 import org.noblecow.hrservice.data.util.DEFAULT_BPM
 import org.noblecow.hrservice.data.util.ResourceHelper
-import org.noblecow.hrservice.di.ViewModelScope
 import org.noblecow.hrservice.domain.usecase.StartServiceResult
 import org.noblecow.hrservice.domain.usecase.StartServicesUseCase
 
@@ -50,7 +51,7 @@ internal data class MainUiState(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("TooManyFunctions")
-@ContributesIntoMap(ViewModelScope::class)
+@ContributesIntoMap(AppScope::class)
 @ViewModelKey(MainViewModel::class)
 @Inject
 internal class MainViewModel(

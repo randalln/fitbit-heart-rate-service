@@ -10,6 +10,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.binding
+import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
 import org.noblecow.hrservice.composables.HeartRateApp
 import org.noblecow.hrservice.di.ActivityKey
 import org.noblecow.hrservice.ui.theme.HeartRateTheme
@@ -17,7 +18,7 @@ import org.noblecow.hrservice.ui.theme.HeartRateTheme
 @ContributesIntoMap(AppScope::class, binding<Activity>())
 @ActivityKey(MainActivity::class)
 @Inject
-class MainActivity(viewModelFactory: ViewModelProvider.Factory) : ComponentActivity() {
+class MainActivity(private val viewModelFactory: MetroViewModelFactory) : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,10 +26,8 @@ class MainActivity(viewModelFactory: ViewModelProvider.Factory) : ComponentActiv
         enableEdgeToEdge()
         setContent {
             HeartRateTheme {
-                HeartRateApp()
+                HeartRateApp(viewModelFactory)
             }
         }
     }
-
-    override val defaultViewModelProviderFactory: ViewModelProvider.Factory = viewModelFactory
 }

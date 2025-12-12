@@ -11,8 +11,9 @@ import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Multibinds
 import dev.zacsweers.metro.Provider
 import dev.zacsweers.metro.Provides
+import dev.zacsweers.metrox.android.MetroAppComponentProviders
+import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 import kotlin.reflect.KClass
-import org.noblecow.hrservice.viewmodel.ViewModelGraph
 import org.noblecow.hrservice.worker.WorkerCoordinator
 
 @DependencyGraph(
@@ -21,14 +22,8 @@ import org.noblecow.hrservice.worker.WorkerCoordinator
 )
 internal interface AndroidAppGraph :
     AppGraph,
-    ViewModelGraph.Factory {
-
-    /**
-     * A multibinding map of activity classes to their providers accessible for
-     * [MetroAppComponentFactory].
-     */
-    @Multibinds
-    val activityProviders: Map<KClass<out Activity>, Provider<Activity>>
+    MetroAppComponentProviders,
+    ViewModelGraph {
 
     val workerCoordinator: WorkerCoordinator
 
@@ -40,9 +35,6 @@ internal interface AndroidAppGraph :
         Map<KClass<out ListenableWorker>, Provider<MetroWorkerFactory.WorkerInstanceFactory<*>>>
 
     val workerFactory: MetroWorkerFactory
-
-    @Multibinds
-    val receiverProviders: Map<KClass<out BroadcastReceiver>, Provider<BroadcastReceiver>>
 
     @Provides
     fun provideApplicationContext(application: Application): Context = application

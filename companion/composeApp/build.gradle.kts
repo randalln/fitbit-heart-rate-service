@@ -99,6 +99,7 @@ kotlin {
             implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.status.pages)
             implementation(libs.kermit)
+            implementation(libs.metrox.viewmodel.compose)
             implementation(libs.navigation.compose)
         }
         commonTest.dependencies {
@@ -120,6 +121,7 @@ kotlin {
             implementation(libs.ktor.server.call.logging)
             implementation(libs.ktor.server.netty)
             implementation(libs.logback.android)
+            implementation(libs.metrox.android)
         }
         androidUnitTest.dependencies {
             implementation(libs.androidx.compose.ui.tooling)
