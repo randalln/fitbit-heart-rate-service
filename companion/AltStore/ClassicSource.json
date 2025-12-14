@@ -19,10 +19,10 @@
             "category": "health-and-fitness",
             "versions": [
                 {
-                    "version": "0.9.0",
-                    "date": "2025-12-04",
-                    "downloadURL": "https://github.com/randalln/fitbit-heart-rate-service/releases/download/v0.9.0/iosApp.ipa",
-                    "size": 12478740,
+                    "version": "0.9.1",
+                    "date": "2025-12-14",
+                    "downloadURL": "https://github.com/randalln/fitbit-heart-rate-service/releases/download/v0.9.1/iosApp.ipa",
+                    "size": 12496101,
                     "minOSVersion": "15.6"
                 }
             ],
