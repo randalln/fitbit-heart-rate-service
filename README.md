@@ -37,7 +37,7 @@ who got the watch app working on OS 4 devices (Versa 2, Versa Lite, Versa, Ionic
 [<img alt="Install from Google Play" src="GetItOnGooglePlay_Badge_Web_color_English.png">](https://play.google.com/store/apps/details?id=org.noblecow.hrservice)
 #### iOS
 1. Install [AltStore Classic](https://faq.altstore.io/)
-2. Add a new source to AltStore Classic: https://raw.githubusercontent.com/randalln/fitbit-heart-rate-service/main/companion/AltStore/ClassicSource.json
+2. Add a new source to AltStore Classic: https://randalln.github.io/fitbit-heart-rate-service/altstore.json
 3. Install **FB Heart Rate Monitor**
 
 
