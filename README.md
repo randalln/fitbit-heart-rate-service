@@ -1,4 +1,4 @@
-# FB Heart Rate Monitor (for Fitbit Sense, Versa 3, Versa 2, Versa Lite, Versa, and Ionic)
+# FB Heart Rate Monitor for Fitbit Sense, Versa 3, Versa 2, Versa Lite, Versa, and Ionic
 
 A pair of apps: one for a Fitbit&trade; smart watch, and one for an Android or iOS device, that 
 create a mock Bluetooth heart rate monitor.
