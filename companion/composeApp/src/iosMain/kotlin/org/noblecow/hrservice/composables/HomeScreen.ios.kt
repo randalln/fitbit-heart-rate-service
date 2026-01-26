@@ -11,6 +11,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import heartratemonitor.composeapp.generated.resources.Res
 import heartratemonitor.composeapp.generated.resources.start
@@ -18,7 +19,6 @@ import heartratemonitor.composeapp.generated.resources.starting
 import heartratemonitor.composeapp.generated.resources.stop
 import heartratemonitor.composeapp.generated.resources.stopping
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.noblecow.hrservice.data.repository.ServicesState
 import org.noblecow.hrservice.ui.theme.HeartRateTheme
 

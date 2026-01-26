@@ -4,26 +4,26 @@ activity = "1.12.2"
 activity-compose = "1.12.2"
 agp = "8.13.2"
 blessedKotlin = "3.0.11"
-compose-bom = "2025.12.00"
+compose-bom = "2026.01.00"
 composeHotReload = "1.0.0"
-compose-multiplatform = "1.9.3"
-compose-rules = "0.4.8"
+compose-multiplatform = "1.10.0"
+compose-rules = "0.5.5"
 detekt = "1.23.8"
 junit = "4.13.2"
 jvm = "21"
 kermit = "2.0.8"
-kotlin = "2.2.21"
+kotlin = "2.3.0"
 kotlinxCoroutines = "1.10.2"
 kover = "0.9.4"
 ktlint-gradle = "14.0.1"
 ktor = "3.3.3"
 lifecycleViewmodelCompose = "2.9.6"
 logbackAndroid = "3.0.0"
-logbackClassic = "1.5.24"
+logbackClassic = "1.5.26"
 material = "1.13.0"
 materialIconsCore = "1.7.3"
-metro = "0.8.2"
-mockk = "1.14.7"
+metro = "0.9.4"
+mockk = "1.14.9"
 navigationCompose = "2.9.1"
 testRules = "1.7.0"
 testRunner = "1.7.0"
@@ -44,6 +44,12 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "testRules" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
 blessed-kotlin = { module = "com.github.weliem:blessed-kotlin", version.ref = "blessedKotlin" }
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose-multiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose-multiplatform" }
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose-multiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose-multiplatform" }
+compose-ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "compose-multiplatform" }
+compose-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "compose-multiplatform" }
 compose-rules-detekt = { module = "io.nlopez.compose.rules:detekt", version.ref = "compose-rules" }
 compose-rules-ktlint = { module = "io.nlopez.compose.rules:ktlint", version.ref = "compose-rules" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

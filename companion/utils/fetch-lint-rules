@@ -15,9 +15,9 @@ fi
 mkdir -p ${OUTPUT_DIR}
 
 for JAR in ${JARS}; do
-    echo $COMPOSE_RULES_VER
+    echo ${JAR} ${COMPOSE_RULES_VER}
     if [ ! -f ${OUTPUT_DIR}/${JAR}-compose-${COMPOSE_RULES_VER}-all.jar ]; then
-	echo "Fetching ${JAR}-compose-${COMPOSE_RULES}-all.jar ..."
+	echo "Fetching ${JAR}-compose-${COMPOSE_RULES_VER}-all.jar ..."
 	curl -L -OJ --output-dir ${OUTPUT_DIR} \
 	     https://github.com/mrmans0n/compose-rules/releases/download/v${COMPOSE_RULES_VER}/${JAR}-compose-${COMPOSE_RULES_VER}-all.jar
     fi

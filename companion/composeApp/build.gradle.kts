@@ -38,7 +38,7 @@ plugins {
 }
 
 ktlint {
-    version.set("1.7.1")
+    version.set("1.8.0")
     verbose.set(true)
     outputToConsole.set(true)
     coloredOutput.set(true)
@@ -79,13 +79,13 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.foundation)
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.foundation)
             implementation(compose.material3)
             implementation(libs.material.icons.core)
-            implementation(compose.ui)
-            implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
+            implementation(libs.compose.ui)
+            implementation(libs.compose.components.resources)
+            implementation(libs.compose.ui.tooling.preview)
             implementation(libs.aboutlibraries.core)
             implementation(libs.aboutlibraries.compose.m3)
             api(libs.lifecycle.viewmodel.compose)
@@ -227,7 +227,7 @@ android {
 dependencies {
     detektPlugins(libs.compose.rules.detekt)
     ktlintRuleset(libs.compose.rules.ktlint)
-    debugImplementation(compose.uiTooling)
+    debugImplementation(libs.compose.ui.tooling)
 }
 
 configurations.testImplementation {
