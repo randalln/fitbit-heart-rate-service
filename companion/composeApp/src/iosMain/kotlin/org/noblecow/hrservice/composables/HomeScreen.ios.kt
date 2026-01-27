@@ -6,12 +6,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import heartratemonitor.composeapp.generated.resources.Res
 import heartratemonitor.composeapp.generated.resources.start
@@ -20,7 +17,6 @@ import heartratemonitor.composeapp.generated.resources.stop
 import heartratemonitor.composeapp.generated.resources.stopping
 import org.jetbrains.compose.resources.stringResource
 import org.noblecow.hrservice.data.repository.ServicesState
-import org.noblecow.hrservice.ui.theme.HeartRateTheme
 
 /**
  * iOS implementation of home screen with iOS-native button styling.
@@ -108,44 +104,6 @@ actual fun HomeScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun HomeScreenLightPreview() {
-    HeartRateTheme(darkTheme = false) {
-        Surface(
-            color = MaterialTheme.colorScheme.background
-        ) {
-            HomeScreen(
-                onStartClick = { },
-                onStopClick = { },
-                servicesState = ServicesState.Stopped,
-                showAwaitingClient = true,
-                bpm = 128,
-                isHeartBeatPulse = true
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun HomeScreenDarkPreview() {
-    HeartRateTheme(darkTheme = true) {
-        Surface(
-            color = MaterialTheme.colorScheme.background
-        ) {
-            HomeScreen(
-                onStartClick = { },
-                onStopClick = { },
-                servicesState = ServicesState.Starting,
-                showAwaitingClient = true,
-                bpm = 128,
-                isHeartBeatPulse = true
-            )
         }
     }
 }
