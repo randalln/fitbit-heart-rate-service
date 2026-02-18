@@ -160,8 +160,8 @@ android {
         applicationId = "org.noblecow.hrservice"
         minSdk = 28
         targetSdk = 36
-        versionCode = 16
-        versionName = "0.9.1"
+        versionCode = 17
+        versionName = "0.9.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures {
