@@ -62,7 +62,7 @@ tasks.register<Exec>("buildIosIpa") {
             println("📦 Location: ${ipaFile.absolutePath}")
             println("📊 Size: ${"%.2f".format(sizeInMB)} MB")
             println("📊 Bytes: ${ipaFile.length()}")
-            println("\nUpdate AltStore/ClassicSource.json with:")
+            println("\nUpdate altstore.json with:")
             println("  \"size\": ${ipaFile.length()},")
             println("  \"downloadURL\": \"<your-hosted-url>/iosApp.ipa\"")
         }
