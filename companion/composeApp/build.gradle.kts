@@ -47,12 +47,10 @@ ktlint {
     }
 }
 
-val keystorePropertiesFile = rootProject.file("keystore.properties")
-val keystoreProperties = Properties()
-keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+val jvmVersion = libs.versions.jvm.get() ?: "21"
 
 kotlin {
-    jvmToolchain(libs.versions.jvm.get().toInt())
+    jvmToolchain(jvmVersion.toInt())
     compilerOptions {
         allWarningsAsErrors = true
         freeCompilerArgs.add("-Xexpect-actual-classes")
@@ -60,7 +58,7 @@ kotlin {
 
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_21)
+            jvmTarget.set(JvmTarget.fromTarget(jvmVersion))
         }
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
@@ -170,6 +168,9 @@ android {
         buildConfig = true
     }
     signingConfigs {
+        val keystoreProperties = Properties().apply {
+            this.load(FileInputStream(rootProject.file("keystore.properties")))
+        }
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String
             keyPassword = keystoreProperties["keyPassword"] as String
@@ -209,8 +210,10 @@ android {
         unitTests.isReturnDefaultValues = true
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        JavaVersion.toVersion(jvmVersion).apply {
+            sourceCompatibility = this
+            targetCompatibility = this
+        }
     }
     kotlin {
         compilerOptions {
