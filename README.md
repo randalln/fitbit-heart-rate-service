@@ -23,10 +23,10 @@ who got the watch app working on OS 4 devices (Versa 2, Versa Lite, Versa, Ionic
 <li>One of the Fitbit&trade; smart watches (with the Fitbit Gallery) noted above and a device
    running at least Android 9 or iOS 15.6</li>
 <li>If you plan on running a fitness app on a mobile device, e.g. Strava, you'll need a second
-   device, because <strong>FB Heart Rate Monitor</strong> will need to run on the same (bluetooth) device as the
+   device, because <strong>FB Heart Rate Monitor</strong> will need to run on the same device as the
    Fitbit&trade; app.<br>
-   For example, I run Wahoo or Strava on my iPad or spare old Android phone and <strong>FB Heart Rate
-   Monitor</strong> on my regular phone (where Fitbit&trade; is installed)</li>
+   For example: I run Wahoo or Strava on my iPad or spare old Android phone and <strong>FB Heart
+   Rate Monitor</strong> on my regular phone (where Fitbit&trade; is installed)</li>
 </ol>
 
 <h2>Installation</h2>

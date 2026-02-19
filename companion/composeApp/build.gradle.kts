@@ -18,6 +18,7 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import java.io.FileInputStream
+import java.io.FileNotFoundException
 import java.util.Properties
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -168,14 +169,19 @@ android {
         buildConfig = true
     }
     signingConfigs {
-        val keystoreProperties = Properties().apply {
-            this.load(FileInputStream(rootProject.file("keystore.properties")))
-        }
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
-            storeFile = file(keystoreProperties["storeFile"] as String)
-            storePassword = keystoreProperties["storePassword"] as String
+        val propsFile: File = rootProject.file("keystore.properties")
+        if (propsFile.exists()) {
+            val keystoreProperties = Properties().apply {
+                this.load(FileInputStream(propsFile))
+            }
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        } else {
+            create("release") // Empty release as default
         }
     }
     buildTypes {
