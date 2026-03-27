@@ -12,7 +12,7 @@ import org.noblecow.hrservice.data.repository.MainRepository
 import org.noblecow.hrservice.di.ReceiverKey
 
 @ContributesIntoMap(AppScope::class, binding<BroadcastReceiver>())
-@ReceiverKey(HRBroadcastReceiver::class)
+@ReceiverKey
 @Inject
 class HRBroadcastReceiver(val mainRepository: MainRepository) : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {

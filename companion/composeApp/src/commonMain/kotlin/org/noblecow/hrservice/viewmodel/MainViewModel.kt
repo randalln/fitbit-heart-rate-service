@@ -52,7 +52,7 @@ internal data class MainUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("TooManyFunctions")
 @ContributesIntoMap(AppScope::class)
-@ViewModelKey(MainViewModel::class)
+@ViewModelKey
 @Inject
 internal class MainViewModel(
     private val mainRepository: MainRepository,

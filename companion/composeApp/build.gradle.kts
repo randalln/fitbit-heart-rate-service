@@ -225,7 +225,6 @@ android {
         compilerOptions {
             allWarningsAsErrors = true
             freeCompilerArgs = listOf(
-                "-Xwhen-guards",
                 "-Xannotation-default-target=param-property",
                 "-Xexpect-actual-classes"
             )
