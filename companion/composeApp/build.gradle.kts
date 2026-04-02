@@ -17,16 +17,12 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import java.io.FileInputStream
-import java.io.FileNotFoundException
-import java.util.Properties
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 
 plugins {
     alias(libs.plugins.aboutLibs)
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
+    alias(libs.plugins.buildkonfig)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.compose.hotreload)
     alias(libs.plugins.compose.multiplatform)
@@ -48,21 +44,45 @@ ktlint {
     }
 }
 
-val jvmVersion = libs.versions.jvm.get() ?: "21"
+val jvmVersion = libs.versions.jvm.get()!!
+val projectPackage = "org.noblecow.hrservice"
 
 kotlin {
     jvmToolchain(jvmVersion.toInt())
     compilerOptions {
         allWarningsAsErrors = true
-        freeCompilerArgs.add("-Xexpect-actual-classes")
+        freeCompilerArgs.addAll(
+            "-Xexpect-actual-classes",
+            "-Xannotation-default-target=param-property"
+        )
     }
 
-    androidTarget {
+    android {
+        namespace = projectPackage
+        compileSdk = 36
+        minSdk = 28
         compilerOptions {
             jvmTarget.set(JvmTarget.fromTarget(jvmVersion))
         }
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
+        androidResources {
+            enable = true
+        }
+        withHostTest {
+            isReturnDefaultValues = true
+        }
+        withDeviceTest {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+            packaging {
+                resources.excludes.addAll(
+                    setOf(
+                        "/META-INF/{AL2.0,LGPL2.1}",
+                        "META-INF/INDEX.LIST",
+                        "META-INF/io.netty.versions.properties",
+                        "META-INF/LICENSE*.md"
+                    )
+                )
+            }
+        }
     }
 
     listOf(
@@ -70,7 +90,7 @@ kotlin {
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            binaryOption("bundleId", "org.noblecow.hrservice")
+            binaryOption("bundleId", projectPackage)
             baseName = "ComposeApp"
             isStatic = true
         }
@@ -80,6 +100,7 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
+            @Suppress("DEPRECATION")
             implementation(compose.material3)
             implementation(libs.material.icons.core)
             implementation(libs.compose.ui)
@@ -121,7 +142,7 @@ kotlin {
             implementation(libs.logback.android)
             implementation(libs.metrox.android)
         }
-        androidUnitTest.dependencies {
+        getByName("androidHostTest").dependencies {
             implementation(libs.androidx.compose.ui.tooling)
             implementation(libs.androidx.test.runner)
             implementation(libs.junit)
@@ -132,10 +153,11 @@ kotlin {
             implementation(libs.logback.classic)
             implementation(libs.turbine)
         }
-        androidInstrumentedTest.dependencies {
+        getByName("androidDeviceTest").dependencies {
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
             implementation(libs.androidx.compose.ui.test)
             implementation(libs.androidx.compose.ui.test.junit4)
+            implementation(libs.androidx.test.espresso.core)
             implementation(libs.androidx.test.rules)
             implementation(libs.androidx.compose.ui.test.manifest)
         }
@@ -152,93 +174,27 @@ kotlin {
     }
 }
 
-android {
-    namespace = "org.noblecow.hrservice"
-    compileSdk = 36
-    ndkVersion = "29.0.14206865"
-
-    defaultConfig {
-        applicationId = "org.noblecow.hrservice"
-        minSdk = 28
-        targetSdk = 36
-        versionCode = 17
-        versionName = "0.9.2"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-    buildFeatures {
-        buildConfig = true
-    }
-    signingConfigs {
-        val propsFile: File = rootProject.file("keystore.properties")
-        if (propsFile.exists()) {
-            val keystoreProperties = Properties().apply {
-                this.load(FileInputStream(propsFile))
-            }
-            create("release") {
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-                storeFile = file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
-            }
-        } else {
-            create("release") // Empty release as default
-        }
-    }
-    buildTypes {
-        getByName("debug") {
-            applicationIdSuffix = ".debug"
-            isDebuggable = true
-        }
-        getByName("release") {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            signingConfig = signingConfigs["release"]
-        }
-    }
-    packaging {
-        resources {
-            excludes += arrayOf(
-                "/META-INF/{AL2.0,LGPL2.1}",
-                "META-INF/INDEX.LIST",
-                "META-INF/io.netty.versions.properties"
-            )
-        }
-    }
-    testOptions {
-        animationsDisabled = true
-        packaging {
-            resources.excludes.add("META-INF/LICENSE*.md")
-        }
-        unitTests.isReturnDefaultValues = true
-    }
-    compileOptions {
-        JavaVersion.toVersion(jvmVersion).apply {
-            sourceCompatibility = this
-            targetCompatibility = this
-        }
-    }
-    kotlin {
-        compilerOptions {
-            allWarningsAsErrors = true
-            freeCompilerArgs = listOf(
-                "-Xannotation-default-target=param-property",
-                "-Xexpect-actual-classes"
-            )
-        }
-    }
-}
-
 dependencies {
     detektPlugins(libs.compose.rules.detekt)
     ktlintRuleset(libs.compose.rules.ktlint)
-    debugImplementation(libs.compose.ui.tooling)
+    androidRuntimeClasspath(libs.compose.ui.tooling)
 }
 
-configurations.testImplementation {
+buildkonfig {
+    packageName = projectPackage
+
+    defaultConfigs {
+        buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN, "DEBUG", "false")
+    }
+
+    targetConfigs("debug") {
+        create("android") {
+            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN, "DEBUG", "true")
+        }
+    }
+}
+
+configurations.getByName("androidHostTestImplementation") {
     exclude(module = "logback-android")
 }
 

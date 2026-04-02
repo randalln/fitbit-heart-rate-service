@@ -31,7 +31,6 @@ import heartratemonitor.composeapp.generated.resources.stop
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.takeWhile
 import org.noblecow.hrservice.HRBroadcastReceiver
-import org.noblecow.hrservice.MainActivity
 import org.noblecow.hrservice.R
 import org.noblecow.hrservice.data.repository.AppState
 import org.noblecow.hrservice.data.repository.MainRepository
@@ -107,9 +106,12 @@ internal class MainWorker(
             PendingIntent.FLAG_IMMUTABLE
         )
 
-        val intent = Intent(applicationContext, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
+        val intent =
+            checkNotNull(
+                applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)
+            ) { "No launch intent found for ${applicationContext.packageName}" }.apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
         val contentIntent = PendingIntent.getActivity(
             applicationContext,
             0,

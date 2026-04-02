@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.aboutLibs) apply false
     alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.kotlin.multiplatform.library) apply false
+    alias(libs.plugins.buildkonfig) apply false
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.compose.hotreload) apply false
     alias(libs.plugins.compose.multiplatform) apply false
@@ -18,15 +20,19 @@ tasks.register<Exec>("buildIosIpa") {
     val iosAppDir = layout.projectDirectory.dir("iosApp")
     workingDir = iosAppDir.asFile
 
-    // Get version from composeApp
-    val composeAppProject = project(":composeApp")
-    val versionName = composeAppProject.extensions.findByType(com.android.build.gradle.internal.dsl.BaseAppModuleExtension::class.java)
+    // Get version from androidApp
+    val androidAppProject = project(":androidApp")
+    val versionName = androidAppProject.extensions
+        .findByType(com.android.build.api.dsl.ApplicationExtension::class.java)
         ?.defaultConfig?.versionName ?: "1.0"
-    val versionCode = composeAppProject.extensions.findByType(com.android.build.gradle.internal.dsl.BaseAppModuleExtension::class.java)
+    val versionCode = androidAppProject.extensions
+        .findByType(com.android.build.api.dsl.ApplicationExtension::class.java)
         ?.defaultConfig?.versionCode ?: 1
 
     commandLine(
-        "sh", "-c", """
+        "sh",
+        "-c",
+        """
             set -e
             echo "Building iOS archive with version $versionName ($versionCode)..."
             xcodebuild clean archive \

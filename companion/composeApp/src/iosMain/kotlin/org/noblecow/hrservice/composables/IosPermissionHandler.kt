@@ -33,7 +33,7 @@ internal fun IosPermissionHandler(
 
     permissionsRequested?.let { permissions ->
         LaunchedEffect(permissions) {
-            Logger.d("IosPermissionHandler") {
+            Logger.d(tag = "IosPermissionHandler") {
                 "Mock: Auto-granting permissions: $permissions"
             }
 

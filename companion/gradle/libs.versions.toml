@@ -2,8 +2,9 @@
 aboutLibs = "13.2.1"
 activity = "1.13.0"
 activity-compose = "1.13.0"
-agp = "8.13.2"
+agp = "9.1.0"
 blessedKotlin = "3.0.11"
+buildkonfig = "0.17.1"
 compose-bom = "2026.03.01"
 composeHotReload = "1.0.0"
 compose-multiplatform = "1.10.3"
@@ -25,6 +26,7 @@ materialIconsCore = "1.7.3"
 metro = "0.12.1"
 mockk = "1.14.9"
 navigationCompose = "2.9.2"
+espresso = "3.7.0"
 testRules = "1.7.0"
 testRunner = "1.7.0"
 turbine = "1.2.1"
@@ -41,6 +43,7 @@ androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-compose-ui-test = { group = "androidx.compose.ui", name = "ui-test" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
 androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "testRules" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
 blessed-kotlin = { module = "com.github.weliem:blessed-kotlin", version.ref = "blessedKotlin" }
@@ -88,6 +91,8 @@ work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "w
 [plugins]
 aboutLibs = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibs" }
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfig" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 compose-hotreload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
